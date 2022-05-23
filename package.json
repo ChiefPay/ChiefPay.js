@@ -1,0 +1,24 @@
+{
+  "name": "merchantclient",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "start": "ts-node index.ts",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/eventsource": "^1.1.8",
+    "@types/node": "^17.0.33",
+    "tslib": "^2.4.0",
+    "ts-node": "^10.7.0",
+    "typescript": "^4.6.4"
+  },
+  "dependencies": {
+    "eventsource": "^2.0.2"
+  }
+}
