@@ -39,7 +39,7 @@ export class MerchantClient extends EventEmitter {
     this._ts = value.toString();
   }
 
-  constructor({ apiKey = "7dbd2ee4-8ccf-4106-af5a-5a6cc70ae3a2", merchantAddress = "http://merchant.corp/api/sse", ts = 0 }: MerchantClientSettings) {
+  constructor({ apiKey, merchantAddress, ts }: MerchantClientSettings) {
     super();
     this.apiKey = apiKey;
     this.ts = ts;

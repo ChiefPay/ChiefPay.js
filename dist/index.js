@@ -17,7 +17,7 @@ class MerchantClient extends events_1.EventEmitter {
     set ts(value) {
         this._ts = value.toString();
     }
-    constructor({ apiKey = "7dbd2ee4-8ccf-4106-af5a-5a6cc70ae3a2", merchantAddress = "http://merchant.corp/api/sse", ts = 0 }) {
+    constructor({ apiKey, merchantAddress, ts }) {
         super();
         this.apiKey = apiKey;
         this.ts = ts;
