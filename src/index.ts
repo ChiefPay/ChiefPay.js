@@ -4,6 +4,7 @@ import { EventEmitter } from "events";
 interface Transaction {
   userId: string;
   token: string;
+  value: string;
   usd: number;
   txid: string;
 }
@@ -11,7 +12,7 @@ interface Transaction {
 interface MerchantClientSettings {
   apiKey: string;
   merchantAddress: string;
-  ts: number;
+  ts: number | string;
 }
 
 export declare interface MerchantClient {

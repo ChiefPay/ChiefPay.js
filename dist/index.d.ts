@@ -3,13 +3,14 @@ import { EventEmitter } from "events";
 interface Transaction {
     userId: string;
     token: string;
+    value: string;
     usd: number;
     txid: string;
 }
 interface MerchantClientSettings {
     apiKey: string;
     merchantAddress: string;
-    ts: number;
+    ts: number | string;
 }
 export declare interface MerchantClient {
     on(event: 'transaction', listener: (name: Transaction) => void): this;
