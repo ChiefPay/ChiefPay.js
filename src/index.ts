@@ -41,7 +41,7 @@ export class MerchantClient extends EventEmitter {
 	private es: EventSource;
 	private lastPing: Date = new Date();
 	private baseURL: string;
-	private rates: {
+	rates: {
 		[chain: number]: {
 			[token: string]: string;
 		};
