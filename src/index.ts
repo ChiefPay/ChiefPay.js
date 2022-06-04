@@ -1,15 +1,8 @@
 import EventSource from "eventsource";
 import { EventEmitter } from "events";
+import { Transaction } from "merchant-types";
 
 const MIN_RATE_UPDATE_INTERVAL = 10000;
-
-interface Transaction {
-	userId: string;
-	token: string;
-	value: string;
-	usd: number;
-	txid: string;
-}
 
 interface MerchantClientSettings {
 	apiKey: string;
@@ -114,5 +107,17 @@ export class MerchantClient extends EventEmitter {
 		});
 
 		return await res.text();
+	}
+
+	async transactions() {
+		let res = await fetch(this.baseURL + "/transactions", {
+			method: "POST",
+			headers: {
+				"x-api-key": this.apiKey,
+				'Content-Type': 'application/json'
+			},
+		});
+
+		return <Transaction[]>await res.json();
 	}
 }
