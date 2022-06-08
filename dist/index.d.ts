@@ -1,12 +1,6 @@
 /// <reference types="node" />
 import { EventEmitter } from "events";
-interface Transaction {
-    userId: string;
-    token: string;
-    value: string;
-    usd: number;
-    txid: string;
-}
+import { Transaction } from "merchant-types";
 interface MerchantClientSettings {
     apiKey: string;
     /**
@@ -33,7 +27,11 @@ export declare class MerchantClient extends EventEmitter {
     private es;
     private lastPing;
     private baseURL;
-    private rates;
+    rates: {
+        [chain: number]: {
+            [token: string]: string;
+        };
+    };
     get ts(): number | string;
     set ts(value: number | string);
     constructor({ apiKey, baseURL, ts }: MerchantClientSettings);
@@ -44,5 +42,6 @@ export declare class MerchantClient extends EventEmitter {
         };
     }>;
     wallet(userId: string): Promise<string>;
+    transactions(): Promise<Transaction[]>;
 }
 export {};

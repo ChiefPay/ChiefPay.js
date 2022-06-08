@@ -73,6 +73,16 @@ class MerchantClient extends events_1.EventEmitter {
         });
         return await res.text();
     }
+    async transactions() {
+        let res = await fetch(this.baseURL + "/transactions", {
+            method: "POST",
+            headers: {
+                "x-api-key": this.apiKey,
+                'Content-Type': 'application/json'
+            },
+        });
+        return await res.json();
+    }
 }
 exports.MerchantClient = MerchantClient;
 //# sourceMappingURL=index.js.map
