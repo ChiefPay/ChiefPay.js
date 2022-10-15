@@ -66,6 +66,10 @@ export class MerchantClient extends EventEmitter {
 		this.es.onerror = err => this.emit("error", err);
 		this.es.addEventListener("ping", event => this.lastPing = new Date());
 	}
+	
+	stop(){
+		this.es.close();
+	}
 
 	private onMessage(event: MessageEvent<string>) {
 		let data = JSON.parse(event.data) as Transaction;

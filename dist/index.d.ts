@@ -35,6 +35,7 @@ export declare class MerchantClient extends EventEmitter {
     get ts(): number | string;
     set ts(value: number | string);
     constructor({ apiKey, baseURL, ts }: MerchantClientSettings);
+    stop(): void;
     private onMessage;
     updateRates(): Promise<{
         [chain: number]: {
