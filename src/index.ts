@@ -10,7 +10,7 @@ interface MerchantClientSettings {
 	 * url like http://hostname:port
 	 */
 	baseURL: string;
-	ts: number | string;
+	ts: number;
 }
 
 export declare interface MerchantClient {
@@ -29,7 +29,7 @@ export declare interface MerchantClient {
 
 export class MerchantClient extends EventEmitter {
 	apiKey: string;
-	private _ts: string = "0";
+	private ts: number;
 	private lastRatesUpdate: number = 0;
 	private es: EventSource;
 	private lastPing: Date = new Date();
@@ -40,14 +40,6 @@ export class MerchantClient extends EventEmitter {
 		};
 	} = {};
 
-	get ts() {
-		return this._ts;
-	}
-
-	set ts(value: number | string) {
-		this._ts = value.toString();
-	}
-
 	constructor({ apiKey, baseURL, ts }: MerchantClientSettings) {
 		super();
 		this.apiKey = apiKey;
@@ -57,7 +49,7 @@ export class MerchantClient extends EventEmitter {
 		this.es = new EventSource(this.baseURL + "/sse", {
 			headers: {
 				"x-api-key": this.apiKey,
-				"ts": this.ts
+				"ts": this.ts.toString()
 			}
 		});
 
@@ -66,8 +58,8 @@ export class MerchantClient extends EventEmitter {
 		this.es.onerror = err => this.emit("error", err);
 		this.es.addEventListener("ping", event => this.lastPing = new Date());
 	}
-	
-	stop(){
+
+	stop() {
 		this.es.close();
 	}
 
@@ -113,15 +105,21 @@ export class MerchantClient extends EventEmitter {
 		return await res.text();
 	}
 
-	async transactions() {
-		let res = await fetch(this.baseURL + "/transactions", {
-			method: "POST",
-			headers: {
-				"x-api-key": this.apiKey,
-				'Content-Type': 'application/json'
-			},
-		});
+	async transactions(ids: number[]) {
+		let result: Transaction[] = [];
+		while (ids.length > 0) {
+			let res = await fetch(this.baseURL + "/transactions", {
+				method: "POST",
+				headers: {
+					"x-api-key": this.apiKey,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ ids: ids.splice(0, 100) })
+			});
 
-		return <Transaction[]>await res.json();
+			result.push(await res.json());
+		}
+
+		return result;
 	}
 }
