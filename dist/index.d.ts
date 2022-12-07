@@ -7,7 +7,7 @@ interface MerchantClientSettings {
      * url like http://hostname:port
      */
     baseURL: string;
-    ts: number | string;
+    ts: number;
 }
 export declare interface MerchantClient {
     on(event: 'transaction', listener: (name: Transaction) => void): this;
@@ -22,7 +22,7 @@ export declare interface MerchantClient {
 }
 export declare class MerchantClient extends EventEmitter {
     apiKey: string;
-    private _ts;
+    private ts;
     private lastRatesUpdate;
     private es;
     private lastPing;
@@ -32,8 +32,6 @@ export declare class MerchantClient extends EventEmitter {
             [token: string]: string;
         };
     };
-    get ts(): number | string;
-    set ts(value: number | string);
     constructor({ apiKey, baseURL, ts }: MerchantClientSettings);
     stop(): void;
     private onMessage;
@@ -43,6 +41,6 @@ export declare class MerchantClient extends EventEmitter {
         };
     }>;
     wallet(userId: string): Promise<string>;
-    transactions(): Promise<Transaction[]>;
+    transactions(ids: number[]): Promise<Transaction[]>;
 }
 export {};

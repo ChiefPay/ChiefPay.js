@@ -9,18 +9,12 @@ const events_1 = require("events");
 const MIN_RATE_UPDATE_INTERVAL = 10000;
 class MerchantClient extends events_1.EventEmitter {
     apiKey;
-    _ts = "0";
+    ts;
     lastRatesUpdate = 0;
     es;
     lastPing = new Date();
     baseURL;
     rates = {};
-    get ts() {
-        return this._ts;
-    }
-    set ts(value) {
-        this._ts = value.toString();
-    }
     constructor({ apiKey, baseURL, ts }) {
         super();
         this.apiKey = apiKey;
@@ -29,7 +23,7 @@ class MerchantClient extends events_1.EventEmitter {
         this.es = new eventsource_1.default(this.baseURL + "/sse", {
             headers: {
                 "x-api-key": this.apiKey,
-                "ts": this.ts
+                "ts": this.ts.toString()
             }
         });
         this.es.onopen = () => this.emit("connected");
@@ -76,15 +70,20 @@ class MerchantClient extends events_1.EventEmitter {
         });
         return await res.text();
     }
-    async transactions() {
-        let res = await fetch(this.baseURL + "/transactions", {
-            method: "POST",
-            headers: {
-                "x-api-key": this.apiKey,
-                'Content-Type': 'application/json'
-            },
-        });
-        return await res.json();
+    async transactions(ids) {
+        let result = [];
+        while (ids.length > 0) {
+            let res = await fetch(this.baseURL + "/transactions", {
+                method: "POST",
+                headers: {
+                    "x-api-key": this.apiKey,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ ids: ids.splice(0, 100) })
+            });
+            result.push(await res.json());
+        }
+        return result;
     }
 }
 exports.MerchantClient = MerchantClient;
