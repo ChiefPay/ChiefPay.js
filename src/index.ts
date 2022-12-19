@@ -117,7 +117,7 @@ export class MerchantClient extends EventEmitter {
 				body: JSON.stringify({ ids: ids.splice(0, 100) })
 			});
 
-			result.push(await res.json());
+			result.push(...await res.json());
 		}
 
 		return result;
