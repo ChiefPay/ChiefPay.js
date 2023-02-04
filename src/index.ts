@@ -90,7 +90,7 @@ export class MerchantClient extends EventEmitter {
 		return this.rates;
 	}
 
-	async wallet(userId: string) {
+	async wallet(walletId: string) {
 		let res = await fetch(this.baseURL + "/wallet", {
 			method: "POST",
 			headers: {
@@ -98,7 +98,7 @@ export class MerchantClient extends EventEmitter {
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify({
-				userId
+				walletId
 			}),
 		});
 
