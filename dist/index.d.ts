@@ -40,7 +40,7 @@ export declare class MerchantClient extends EventEmitter {
             [token: string]: string;
         };
     }>;
-    wallet(userId: string): Promise<string>;
+    wallet(walletId: string): Promise<string>;
     transactions(ids: number[]): Promise<Transaction[]>;
 }
 export {};
