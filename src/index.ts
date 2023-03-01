@@ -14,17 +14,25 @@ interface MerchantClientSettings {
 }
 
 export declare interface MerchantClient {
-	on(event: 'transaction', listener: (name: Transaction) => void): this;
-	once(event: 'transaction', listener: (name: Transaction) => void): this;
-	off(event: 'transaction', listener: (name: Transaction) => void): this;
+	on(event: 'transaction', listener: (tx: Transaction) => void): this;
+	once(event: 'transaction', listener: (tx: Transaction) => void): this;
+	off(event: 'transaction', listener: (tx: Transaction) => void): this;
+	emit(event: 'transaction', tx: Transaction): boolean;
 
 	on(event: 'connected', listener: () => void): this;
 	once(event: 'connected', listener: () => void): this;
 	off(event: 'connected', listener: () => void): this;
+	emit(event: 'connected'): boolean;
 
 	on(event: 'error', listener: (err: any) => void): this;
 	once(event: 'error', listener: (err: any) => void): this;
 	off(event: 'error', listener: (err: any) => void): this;
+	emit(event: 'error', err: any): boolean;
+
+	on(event: 'rates', listener: (rates: typeof MerchantClient.prototype.rates) => void): this;
+	once(event: 'rates', listener: (rates: typeof MerchantClient.prototype.rates) => void): this;
+	off(event: 'rates', listener: (rates: typeof MerchantClient.prototype.rates) => void): this;
+	emit(event: 'rates', rates: typeof MerchantClient.prototype.rates): boolean;
 }
 
 export class MerchantClient extends EventEmitter {
@@ -54,6 +62,7 @@ export class MerchantClient extends EventEmitter {
 		});
 
 		this.es.onopen = () => this.emit("connected");
+		this.es.addEventListener("rates", event => this.handleRates(JSON.parse(event.data)));
 		this.es.onmessage = this.onMessage.bind(this);
 		this.es.onerror = err => this.emit("error", err);
 		this.es.addEventListener("ping", event => this.lastPing = new Date());
@@ -70,6 +79,16 @@ export class MerchantClient extends EventEmitter {
 		this.emit("transaction", data);
 	}
 
+	private async handleRates(rates: typeof this.rates) {
+		this.rates = rates;
+		for (let chain in this.rates) {
+			for (let token in this.rates[chain]) {
+				this.rates[chain][token] = (Number(BigInt(this.rates[chain][token]) / (10n ** 15n)) / 1000).toFixed(2);
+			}
+		}
+		this.emit("rates", this.rates);
+	}
+
 	async updateRates() {
 		if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL) throw new Error("MerchantClient: rateUpdateInterval is too short");
 		this.lastRatesUpdate = Date.now();
@@ -81,25 +100,23 @@ export class MerchantClient extends EventEmitter {
 			},
 		});
 
-		this.rates = await res.json();
-		for (let chain in this.rates) {
-			for (let token in this.rates[chain]) {
-				this.rates[chain][token] = (Number(BigInt(this.rates[chain][token]) / (10n ** 15n)) / 1000).toFixed(2);
-			}
-		}
+		this.handleRates(await res.json());
 		return this.rates;
 	}
 
-	async wallet(walletId: string) {
+	async wallet(wallet: { walletId: string, expire?: Date, actuallyExpire?: Date }) {
+		const _wallet = {
+			walletId: wallet.walletId,
+			expire: wallet.expire ? +wallet.expire : undefined,
+			actuallyExpire: wallet.actuallyExpire ? +wallet.actuallyExpire : undefined,
+		}
 		let res = await fetch(this.baseURL + "/wallet", {
 			method: "POST",
 			headers: {
 				"x-api-key": this.apiKey,
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({
-				walletId
-			}),
+			body: JSON.stringify(_wallet),
 		});
 
 		return await res.text();

@@ -27,6 +27,7 @@ class MerchantClient extends events_1.EventEmitter {
             }
         });
         this.es.onopen = () => this.emit("connected");
+        this.es.addEventListener("rates", event => this.handleRates(JSON.parse(event.data)));
         this.es.onmessage = this.onMessage.bind(this);
         this.es.onerror = err => this.emit("error", err);
         this.es.addEventListener("ping", event => this.lastPing = new Date());
@@ -39,6 +40,15 @@ class MerchantClient extends events_1.EventEmitter {
         this.ts = +event.lastEventId;
         this.emit("transaction", data);
     }
+    async handleRates(rates) {
+        this.rates = rates;
+        for (let chain in this.rates) {
+            for (let token in this.rates[chain]) {
+                this.rates[chain][token] = (Number(BigInt(this.rates[chain][token]) / (10n ** 15n)) / 1000).toFixed(2);
+            }
+        }
+        this.emit("rates", this.rates);
+    }
     async updateRates() {
         if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL)
             throw new Error("MerchantClient: rateUpdateInterval is too short");
@@ -49,24 +59,22 @@ class MerchantClient extends events_1.EventEmitter {
                 "x-api-key": this.apiKey
             },
         });
-        this.rates = await res.json();
-        for (let chain in this.rates) {
-            for (let token in this.rates[chain]) {
-                this.rates[chain][token] = (Number(BigInt(this.rates[chain][token]) / (10n ** 15n)) / 1000).toFixed(2);
-            }
-        }
+        this.handleRates(await res.json());
         return this.rates;
     }
-    async wallet(walletId) {
+    async wallet(wallet) {
+        const _wallet = {
+            walletId: wallet.walletId,
+            expire: wallet.expire ? +wallet.expire : undefined,
+            actuallyExpire: wallet.actuallyExpire ? +wallet.actuallyExpire : undefined,
+        };
         let res = await fetch(this.baseURL + "/wallet", {
             method: "POST",
             headers: {
                 "x-api-key": this.apiKey,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                walletId
-            }),
+            body: JSON.stringify(_wallet),
         });
         return await res.text();
     }
