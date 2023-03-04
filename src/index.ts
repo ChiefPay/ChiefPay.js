@@ -33,6 +33,11 @@ export declare interface MerchantClient {
 	once(event: 'rates', listener: (rates: typeof MerchantClient.prototype.rates) => void): this;
 	off(event: 'rates', listener: (rates: typeof MerchantClient.prototype.rates) => void): this;
 	emit(event: 'rates', rates: typeof MerchantClient.prototype.rates): boolean;
+
+	on(event: 'walletExpire', listener: (wallet: { walletId: string, userId: string }) => void): this;
+	once(event: 'walletExpire', listener: (wallet: { walletId: string, userId: string }) => void): this;
+	off(event: 'walletExpire', listener: (wallet: { walletId: string, userId: string }) => void): this;
+	emit(event: 'walletExpire', wallet: { walletId: string, userId: string }): boolean;
 }
 
 export class MerchantClient extends EventEmitter {
@@ -63,6 +68,7 @@ export class MerchantClient extends EventEmitter {
 
 		this.es.onopen = () => this.emit("connected");
 		this.es.addEventListener("rates", event => this.handleRates(JSON.parse(event.data)));
+		this.es.addEventListener("walletExpire", event => this.emit("walletExpire", JSON.parse(event.data)));
 		this.es.onmessage = this.onMessage.bind(this);
 		this.es.onerror = err => this.emit("error", err);
 		this.es.addEventListener("ping", event => this.lastPing = new Date());
@@ -89,6 +95,10 @@ export class MerchantClient extends EventEmitter {
 		this.emit("rates", this.rates);
 	}
 
+	/**
+	 * 
+	 * @deprecated Курсы валют теперь передаются через SSE. Слушать так же через .on("rates")
+	 */
 	async updateRates() {
 		if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL) throw new Error("MerchantClient: rateUpdateInterval is too short");
 		this.lastRatesUpdate = Date.now();

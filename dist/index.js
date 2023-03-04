@@ -28,6 +28,7 @@ class MerchantClient extends events_1.EventEmitter {
         });
         this.es.onopen = () => this.emit("connected");
         this.es.addEventListener("rates", event => this.handleRates(JSON.parse(event.data)));
+        this.es.addEventListener("walletExpire", event => this.emit("walletExpire", JSON.parse(event.data)));
         this.es.onmessage = this.onMessage.bind(this);
         this.es.onerror = err => this.emit("error", err);
         this.es.addEventListener("ping", event => this.lastPing = new Date());
@@ -49,6 +50,10 @@ class MerchantClient extends events_1.EventEmitter {
         }
         this.emit("rates", this.rates);
     }
+    /**
+     *
+     * @deprecated Курсы валют теперь передаются через SSE. Слушать так же через .on("rates")
+     */
     async updateRates() {
         if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL)
             throw new Error("MerchantClient: rateUpdateInterval is too short");
