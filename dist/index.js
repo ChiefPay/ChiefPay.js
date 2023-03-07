@@ -102,6 +102,8 @@ class MerchantClient extends events_1.EventEmitter {
             },
             body: JSON.stringify(wallet),
         });
+        if (res.status == 404)
+            return null;
         return await res.json();
     }
     async transactions(ids) {

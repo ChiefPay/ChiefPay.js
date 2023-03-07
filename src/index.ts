@@ -163,7 +163,9 @@ export class MerchantClient extends EventEmitter {
 			body: JSON.stringify(wallet),
 		});
 
-		return await res.json() as { address: string, expire: Date | null } | null;
+		if (res.status == 404) return null;
+
+		return await res.json() as { address: string, expire: Date | null };
 	}
 
 	async transactions(ids: number[]) {
