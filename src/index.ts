@@ -150,7 +150,18 @@ export class MerchantClient extends EventEmitter {
 			body: JSON.stringify(_wallet),
 		});
 
-		return await res.text();
+		const body = await res.json() as {
+			address: string;
+			expire: string | null;
+			actuallyExpire: string | null;
+		};
+
+		const result: { address: string, expire: Date | null, actuallyExpire: Date | null } = { address: body.address, actuallyExpire: null, expire: null };
+
+		if (body.expire) result.expire = new Date(body.expire);
+		if (body.actuallyExpire) result.actuallyExpire = new Date(body.actuallyExpire);
+
+		return result;
 	}
 
 	async walletExist(wallet: { userId: string }) {

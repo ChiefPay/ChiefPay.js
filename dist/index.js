@@ -91,7 +91,13 @@ class MerchantClient extends events_1.EventEmitter {
             },
             body: JSON.stringify(_wallet),
         });
-        return await res.text();
+        const body = await res.json();
+        const result = { address: body.address, actuallyExpire: null, expire: null };
+        if (body.expire)
+            result.expire = new Date(body.expire);
+        if (body.actuallyExpire)
+            result.actuallyExpire = new Date(body.actuallyExpire);
+        return result;
     }
     async walletExist(wallet) {
         let res = await fetch(this.baseURL + "/walletExist", {

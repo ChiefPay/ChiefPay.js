@@ -77,7 +77,11 @@ export declare class MerchantClient extends EventEmitter {
             [token: string]: string;
         };
     }>;
-    wallet(wallet: WalletById | WalletByUserId): Promise<string>;
+    wallet(wallet: WalletById | WalletByUserId): Promise<{
+        address: string;
+        expire: Date | null;
+        actuallyExpire: Date | null;
+    }>;
     walletExist(wallet: {
         userId: string;
     }): Promise<{
