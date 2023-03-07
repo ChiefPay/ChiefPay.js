@@ -9,6 +9,15 @@ interface MerchantClientSettings {
     baseURL: string;
     ts: number;
 }
+interface WalletById {
+    walletId: string;
+}
+interface WalletByUserId {
+    userId: string;
+    expire: Date;
+    actuallyExpire: Date;
+    renewal?: boolean;
+}
 export declare interface MerchantClient {
     on(event: 'transaction', listener: (tx: Transaction) => void): this;
     once(event: 'transaction', listener: (tx: Transaction) => void): this;
@@ -68,10 +77,9 @@ export declare class MerchantClient extends EventEmitter {
             [token: string]: string;
         };
     }>;
-    wallet(wallet: {
-        walletId: string;
-        expire?: Date;
-        actuallyExpire?: Date;
+    wallet(wallet: WalletById | WalletByUserId): Promise<string>;
+    walletExpire(wallet: {
+        userId: string;
     }): Promise<string>;
     transactions(ids: number[]): Promise<Transaction[]>;
 }

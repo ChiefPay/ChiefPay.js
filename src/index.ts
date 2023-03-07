@@ -13,6 +13,21 @@ interface MerchantClientSettings {
 	ts: number;
 }
 
+interface WalletById {
+	walletId: string;
+}
+
+interface WalletByUserId {
+	userId: string;
+	expire: Date;
+	actuallyExpire: Date;
+	renewal?: boolean;
+}
+
+function isWalletById(body: WalletById | WalletByUserId): body is WalletById {
+	return typeof (body as WalletById).walletId === 'string';
+}
+
 export declare interface MerchantClient {
 	on(event: 'transaction', listener: (tx: Transaction) => void): this;
 	once(event: 'transaction', listener: (tx: Transaction) => void): this;
@@ -114,11 +129,17 @@ export class MerchantClient extends EventEmitter {
 		return this.rates;
 	}
 
-	async wallet(wallet: { walletId: string, expire?: Date, actuallyExpire?: Date }) {
-		const _wallet = {
-			walletId: wallet.walletId,
-			expire: wallet.expire ? +wallet.expire : undefined,
-			actuallyExpire: wallet.actuallyExpire ? +wallet.actuallyExpire : undefined,
+	async wallet(wallet: WalletById | WalletByUserId) {
+		let _wallet;
+		if (isWalletById(wallet)) {
+			_wallet = wallet;
+		} else {
+			_wallet = {
+				walletId: wallet.userId,
+				expire: +wallet.expire,
+				actuallyExpire: +wallet.actuallyExpire,
+				renewal: wallet.renewal,
+			}
 		}
 		let res = await fetch(this.baseURL + "/wallet", {
 			method: "POST",
@@ -127,6 +148,19 @@ export class MerchantClient extends EventEmitter {
 				'Content-Type': 'application/json'
 			},
 			body: JSON.stringify(_wallet),
+		});
+
+		return await res.text();
+	}
+
+	async walletExpire(wallet: { userId: string }) {
+		let res = await fetch(this.baseURL + "/walletExpire", {
+			method: "POST",
+			headers: {
+				"x-api-key": this.apiKey,
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(wallet),
 		});
 
 		return await res.text();

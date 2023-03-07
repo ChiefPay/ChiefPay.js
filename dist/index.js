@@ -7,6 +7,9 @@ exports.MerchantClient = void 0;
 const eventsource_1 = __importDefault(require("eventsource"));
 const events_1 = require("events");
 const MIN_RATE_UPDATE_INTERVAL = 10000;
+function isWalletById(body) {
+    return typeof body.walletId === 'string';
+}
 class MerchantClient extends events_1.EventEmitter {
     apiKey;
     ts;
@@ -68,11 +71,18 @@ class MerchantClient extends events_1.EventEmitter {
         return this.rates;
     }
     async wallet(wallet) {
-        const _wallet = {
-            walletId: wallet.walletId,
-            expire: wallet.expire ? +wallet.expire : undefined,
-            actuallyExpire: wallet.actuallyExpire ? +wallet.actuallyExpire : undefined,
-        };
+        let _wallet;
+        if (isWalletById(wallet)) {
+            _wallet = wallet;
+        }
+        else {
+            _wallet = {
+                walletId: wallet.userId,
+                expire: +wallet.expire,
+                actuallyExpire: +wallet.actuallyExpire,
+                renewal: wallet.renewal,
+            };
+        }
         let res = await fetch(this.baseURL + "/wallet", {
             method: "POST",
             headers: {
@@ -80,6 +90,17 @@ class MerchantClient extends events_1.EventEmitter {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(_wallet),
+        });
+        return await res.text();
+    }
+    async walletExpire(wallet) {
+        let res = await fetch(this.baseURL + "/walletExpire", {
+            method: "POST",
+            headers: {
+                "x-api-key": this.apiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(wallet),
         });
         return await res.text();
     }
