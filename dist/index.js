@@ -93,8 +93,8 @@ class MerchantClient extends events_1.EventEmitter {
         });
         return await res.text();
     }
-    async walletExpire(wallet) {
-        let res = await fetch(this.baseURL + "/walletExpire", {
+    async walletExist(wallet) {
+        let res = await fetch(this.baseURL + "/walletExist", {
             method: "POST",
             headers: {
                 "x-api-key": this.apiKey,
@@ -102,7 +102,7 @@ class MerchantClient extends events_1.EventEmitter {
             },
             body: JSON.stringify(wallet),
         });
-        return await res.text();
+        return await res.json();
     }
     async transactions(ids) {
         let result = [];

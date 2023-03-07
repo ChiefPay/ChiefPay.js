@@ -153,8 +153,8 @@ export class MerchantClient extends EventEmitter {
 		return await res.text();
 	}
 
-	async walletExpire(wallet: { userId: string }) {
-		let res = await fetch(this.baseURL + "/walletExpire", {
+	async walletExist(wallet: { userId: string }) {
+		let res = await fetch(this.baseURL + "/walletExist", {
 			method: "POST",
 			headers: {
 				"x-api-key": this.apiKey,
@@ -163,7 +163,7 @@ export class MerchantClient extends EventEmitter {
 			body: JSON.stringify(wallet),
 		});
 
-		return await res.text();
+		return await res.json() as { address: string, expire: Date | null } | null;
 	}
 
 	async transactions(ids: number[]) {
