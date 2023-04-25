@@ -63,10 +63,10 @@ export declare interface MerchantClient {
 	off(event: 'rates', listener: (rates: typeof MerchantClient.prototype.rates) => void): this;
 	emit(event: 'rates', rates: typeof MerchantClient.prototype.rates): boolean;
 
-	on(event: 'walletExpire', listener: (wallet: { walletId: string, userId: string }) => void): this;
-	once(event: 'walletExpire', listener: (wallet: { walletId: string, userId: string }) => void): this;
-	off(event: 'walletExpire', listener: (wallet: { walletId: string, userId: string }) => void): this;
-	emit(event: 'walletExpire', wallet: { walletId: string, userId: string }): boolean;
+	on(event: 'walletExpire', listener: (wallet: { walletId: string, walletSubId: number, userId: string }) => void): this;
+	once(event: 'walletExpire', listener: (wallet: { walletId: string, walletSubId: number, userId: string }) => void): this;
+	off(event: 'walletExpire', listener: (wallet: { walletId: string, walletSubId: number, userId: string }) => void): this;
+	emit(event: 'walletExpire', wallet: { walletId: string, walletSubId: number, userId: string }): boolean;
 }
 
 export class MerchantClient extends EventEmitter {

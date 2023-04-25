@@ -55,18 +55,22 @@ export declare interface MerchantClient {
     emit(event: 'rates', rates: typeof MerchantClient.prototype.rates): boolean;
     on(event: 'walletExpire', listener: (wallet: {
         walletId: string;
+        walletSubId: number;
         userId: string;
     }) => void): this;
     once(event: 'walletExpire', listener: (wallet: {
         walletId: string;
+        walletSubId: number;
         userId: string;
     }) => void): this;
     off(event: 'walletExpire', listener: (wallet: {
         walletId: string;
+        walletSubId: number;
         userId: string;
     }) => void): this;
     emit(event: 'walletExpire', wallet: {
         walletId: string;
+        walletSubId: number;
         userId: string;
     }): boolean;
 }
