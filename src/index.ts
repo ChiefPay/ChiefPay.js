@@ -9,23 +9,37 @@ interface MerchantClientSettings {
 	/**
 	 * url like http://hostname:port
 	 */
-	baseURL: string;
+	baseURL: `${'http' | 'https'}://${string}:${number}`;
 	ts: number;
 }
 
 interface WalletById {
+	/**
+	 * id пользователя или абстрактный id привязанный к конкретному кошельку
+	 */
 	walletId: string;
+	/**
+	 * SubId нужен для мультикошельков
+	 */
+	walletSubId?: number;
 }
 
 interface WalletByUserId {
 	userId: string;
+	/**
+	 * Дата когда придет уведомление об окончании аренды
+	 */
 	expire: Date;
-	actuallyExpire: Date;
+	/**
+	 * Когда кошелек перестает быть привязаным и может быть назначен кому угодно
+	 * @default {expire}
+	 */
+	actuallyExpire?: Date;
+	/**
+	 * Переписать expire и actuallyExpire если еще не истек
+	 * @default false
+	 */
 	renewal?: boolean;
-}
-
-function isWalletById(body: WalletById | WalletByUserId): body is WalletById {
-	return typeof (body as WalletById).walletId === 'string';
 }
 
 export declare interface MerchantClient {
@@ -89,6 +103,9 @@ export class MerchantClient extends EventEmitter {
 		this.es.addEventListener("ping", event => this.lastPing = new Date());
 	}
 
+	/**
+	 * Закрывает соединение с SSE
+	 */
 	stop() {
 		this.es.close();
 	}
@@ -119,7 +136,7 @@ export class MerchantClient extends EventEmitter {
 		this.lastRatesUpdate = Date.now();
 
 		let res = await fetch(this.baseURL + "/rates", {
-			method: "POST",
+			method: "GET",
 			headers: {
 				"x-api-key": this.apiKey
 			},
@@ -129,56 +146,93 @@ export class MerchantClient extends EventEmitter {
 		return this.rates;
 	}
 
-	async wallet(wallet: WalletById | WalletByUserId) {
-		let _wallet;
-		if (isWalletById(wallet)) {
-			_wallet = wallet;
-		} else {
-			_wallet = {
-				walletId: wallet.userId,
-				expire: +wallet.expire,
-				actuallyExpire: +wallet.actuallyExpire,
-				renewal: wallet.renewal,
-			}
-		}
-		let res = await fetch(this.baseURL + "/wallet", {
-			method: "POST",
+	/**
+	 * Выдает классический кошелек без аренды
+	 */
+	async getWallet(wallet: WalletById) {
+		const url = new URL("/wallet/unique", this.baseURL);
+		url.searchParams.set("walletId", wallet.walletId);
+		if (wallet.walletSubId) url.searchParams.set("walletSubId", wallet.walletSubId.toString());
+
+		let res = await fetch(url, {
+			method: "GET",
 			headers: {
 				"x-api-key": this.apiKey,
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify(_wallet),
 		});
 
 		const body = await res.json() as {
 			address: string;
-			expire: string | null;
-			actuallyExpire: string | null;
+			id: string;
+			subId: number;
 		};
 
-		const result: { address: string, expire: Date | null, actuallyExpire: Date | null } = { address: body.address, actuallyExpire: null, expire: null };
-
-		if (body.expire) result.expire = new Date(body.expire);
-		if (body.actuallyExpire) result.actuallyExpire = new Date(body.actuallyExpire);
-
-		return result;
+		return body;
 	}
 
-	async walletExist(wallet: { userId: string }) {
-		let res = await fetch(this.baseURL + "/walletExist", {
+
+	/**
+	 * Арендует кошелек для пользователя
+	 */
+	async rentWallet(wallet: WalletByUserId) {
+		let res = await fetch(this.baseURL + "/wallet/rent", {
 			method: "POST",
 			headers: {
 				"x-api-key": this.apiKey,
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify(wallet),
+			body: JSON.stringify({
+				userId: wallet.userId,
+				expire: wallet.expire.getTime(),
+				actuallyExpire: wallet.actuallyExpire?.getTime(),
+				renewal: wallet.renewal
+			}),
+		});
+
+		const body = await res.json() as {
+			address: string;
+			id: string;
+			subId: number;
+			expire: number;
+			actuallyExpire: number;
+		};
+
+		return {
+			...body,
+			expire: new Date(body.expire),
+			actuallyExpire: new Date(body.actuallyExpire),
+		};
+	}
+
+	/**
+	 * Ищет уже арендованный кошелек у пользователя
+	 */
+	async searchWallet(wallet: { userId: string }) {
+		const url = new URL("/wallet/search", this.baseURL);
+		url.searchParams.set("userId", wallet.userId);
+		let res = await fetch(url, {
+			method: "GET",
+			headers: {
+				"x-api-key": this.apiKey,
+				'Content-Type': 'application/json'
+			},
 		});
 
 		if (res.status == 404) return null;
 
-		return await res.json() as { address: string, expire: Date | null };
+		const body = await res.json() as { id: string, subId: number, address: string, expire: number, actuallyExpire: number };
+
+		return {
+			...body,
+			expire: new Date(body.expire),
+			actuallyExpire: new Date(body.actuallyExpire),
+		}
 	}
 
+	/**
+	 * Выдает транзакции по id
+	 */
 	async transactions(ids: number[]) {
 		let result: Transaction[] = [];
 		while (ids.length > 0) {

@@ -7,9 +7,6 @@ exports.MerchantClient = void 0;
 const eventsource_1 = __importDefault(require("eventsource"));
 const events_1 = require("events");
 const MIN_RATE_UPDATE_INTERVAL = 10000;
-function isWalletById(body) {
-    return typeof body.walletId === 'string';
-}
 class MerchantClient extends events_1.EventEmitter {
     apiKey;
     ts;
@@ -36,6 +33,9 @@ class MerchantClient extends events_1.EventEmitter {
         this.es.onerror = err => this.emit("error", err);
         this.es.addEventListener("ping", event => this.lastPing = new Date());
     }
+    /**
+     * Закрывает соединение с SSE
+     */
     stop() {
         this.es.close();
     }
@@ -62,7 +62,7 @@ class MerchantClient extends events_1.EventEmitter {
             throw new Error("MerchantClient: rateUpdateInterval is too short");
         this.lastRatesUpdate = Date.now();
         let res = await fetch(this.baseURL + "/rates", {
-            method: "POST",
+            method: "GET",
             headers: {
                 "x-api-key": this.apiKey
             },
@@ -70,48 +70,73 @@ class MerchantClient extends events_1.EventEmitter {
         this.handleRates(await res.json());
         return this.rates;
     }
-    async wallet(wallet) {
-        let _wallet;
-        if (isWalletById(wallet)) {
-            _wallet = wallet;
-        }
-        else {
-            _wallet = {
-                walletId: wallet.userId,
-                expire: +wallet.expire,
-                actuallyExpire: +wallet.actuallyExpire,
-                renewal: wallet.renewal,
-            };
-        }
-        let res = await fetch(this.baseURL + "/wallet", {
-            method: "POST",
+    /**
+     * Выдает классический кошелек без аренды
+     */
+    async getWallet(wallet) {
+        const url = new URL("/wallet/unique", this.baseURL);
+        url.searchParams.set("walletId", wallet.walletId);
+        if (wallet.walletSubId)
+            url.searchParams.set("walletSubId", wallet.walletSubId.toString());
+        let res = await fetch(url, {
+            method: "GET",
             headers: {
                 "x-api-key": this.apiKey,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(_wallet),
         });
         const body = await res.json();
-        const result = { address: body.address, actuallyExpire: null, expire: null };
-        if (body.expire)
-            result.expire = new Date(body.expire);
-        if (body.actuallyExpire)
-            result.actuallyExpire = new Date(body.actuallyExpire);
-        return result;
+        return body;
     }
-    async walletExist(wallet) {
-        let res = await fetch(this.baseURL + "/walletExist", {
+    /**
+     * Арендует кошелек для пользователя
+     */
+    async rentWallet(wallet) {
+        let res = await fetch(this.baseURL + "/wallet/rent", {
             method: "POST",
             headers: {
                 "x-api-key": this.apiKey,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(wallet),
+            body: JSON.stringify({
+                userId: wallet.userId,
+                expire: wallet.expire.getTime(),
+                actuallyExpire: wallet.actuallyExpire?.getTime(),
+                renewal: wallet.renewal
+            }),
+        });
+        const body = await res.json();
+        return {
+            ...body,
+            expire: new Date(body.expire),
+            actuallyExpire: new Date(body.actuallyExpire),
+        };
+    }
+    /**
+     * Ищет уже арендованный кошелек у пользователя
+     */
+    async searchWallet(wallet) {
+        const url = new URL("/wallet/search", this.baseURL);
+        url.searchParams.set("userId", wallet.userId);
+        let res = await fetch(url, {
+            method: "GET",
+            headers: {
+                "x-api-key": this.apiKey,
+                'Content-Type': 'application/json'
+            },
         });
         if (res.status == 404)
             return null;
-        return await res.json();
+        const body = await res.json();
+        return {
+            ...body,
+            expire: new Date(body.expire),
+            actuallyExpire: new Date(body.actuallyExpire),
+        };
     }
+    /**
+     * Выдает транзакции по id
+     */
     async transactions(ids) {
         let result = [];
         while (ids.length > 0) {

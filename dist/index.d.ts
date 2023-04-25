@@ -6,16 +6,34 @@ interface MerchantClientSettings {
     /**
      * url like http://hostname:port
      */
-    baseURL: string;
+    baseURL: `${'http' | 'https'}://${string}:${number}`;
     ts: number;
 }
 interface WalletById {
+    /**
+     * id пользователя или абстрактный id привязанный к конкретному кошельку
+     */
     walletId: string;
+    /**
+     * SubId нужен для мультикошельков
+     */
+    walletSubId?: number;
 }
 interface WalletByUserId {
     userId: string;
+    /**
+     * Дата когда придет уведомление об окончании аренды
+     */
     expire: Date;
-    actuallyExpire: Date;
+    /**
+     * Когда кошелек перестает быть привязаным и может быть назначен кому угодно
+     * @default {expire}
+     */
+    actuallyExpire?: Date;
+    /**
+     * Переписать expire и actuallyExpire если еще не истек
+     * @default false
+     */
     renewal?: boolean;
 }
 export declare interface MerchantClient {
@@ -65,6 +83,9 @@ export declare class MerchantClient extends EventEmitter {
         };
     };
     constructor({ apiKey, baseURL, ts }: MerchantClientSettings);
+    /**
+     * Закрывает соединение с SSE
+     */
     stop(): void;
     private onMessage;
     private handleRates;
@@ -77,17 +98,39 @@ export declare class MerchantClient extends EventEmitter {
             [token: string]: string;
         };
     }>;
-    wallet(wallet: WalletById | WalletByUserId): Promise<{
+    /**
+     * Выдает классический кошелек без аренды
+     */
+    getWallet(wallet: WalletById): Promise<{
         address: string;
-        expire: Date | null;
-        actuallyExpire: Date | null;
+        id: string;
+        subId: number;
     }>;
-    walletExist(wallet: {
+    /**
+     * Арендует кошелек для пользователя
+     */
+    rentWallet(wallet: WalletByUserId): Promise<{
+        expire: Date;
+        actuallyExpire: Date;
+        address: string;
+        id: string;
+        subId: number;
+    }>;
+    /**
+     * Ищет уже арендованный кошелек у пользователя
+     */
+    searchWallet(wallet: {
         userId: string;
     }): Promise<{
+        expire: Date;
+        actuallyExpire: Date;
+        id: string;
+        subId: number;
         address: string;
-        expire: Date | null;
     } | null>;
+    /**
+     * Выдает транзакции по id
+     */
     transactions(ids: number[]): Promise<Transaction[]>;
 }
 export {};
