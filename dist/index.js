@@ -19,8 +19,8 @@ class MerchantClient extends events_1.EventEmitter {
         super();
         this.apiKey = apiKey;
         this.ts = ts;
-        this.baseURL = baseURL + "/api";
-        this.es = new eventsource_1.default(this.baseURL + "/sse", {
+        this.baseURL = baseURL;
+        this.es = new eventsource_1.default(this.baseURL + "/api/sse", {
             headers: {
                 "x-api-key": this.apiKey,
                 "ts": this.ts.toString()
@@ -61,7 +61,7 @@ class MerchantClient extends events_1.EventEmitter {
         if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL)
             throw new Error("MerchantClient: rateUpdateInterval is too short");
         this.lastRatesUpdate = Date.now();
-        let res = await fetch(this.baseURL + "/rates", {
+        let res = await fetch(this.baseURL + "/api/rates", {
             method: "GET",
             headers: {
                 "x-api-key": this.apiKey
@@ -74,7 +74,7 @@ class MerchantClient extends events_1.EventEmitter {
      * Выдает классический кошелек без аренды
      */
     async getWallet(wallet) {
-        const url = new URL("/wallet/unique", this.baseURL);
+        const url = new URL("/api/wallet/unique", this.baseURL);
         url.searchParams.set("walletId", wallet.walletId);
         if (wallet.walletSubId)
             url.searchParams.set("walletSubId", wallet.walletSubId.toString());
@@ -92,7 +92,7 @@ class MerchantClient extends events_1.EventEmitter {
      * Арендует кошелек для пользователя
      */
     async rentWallet(wallet) {
-        let res = await fetch(this.baseURL + "/wallet/rent", {
+        let res = await fetch(this.baseURL + "/api/wallet/rent", {
             method: "POST",
             headers: {
                 "x-api-key": this.apiKey,
@@ -116,7 +116,7 @@ class MerchantClient extends events_1.EventEmitter {
      * Ищет уже арендованный кошелек у пользователя
      */
     async searchWallet(wallet) {
-        const url = new URL("/wallet/search", this.baseURL);
+        const url = new URL("/api/wallet/search", this.baseURL);
         url.searchParams.set("userId", wallet.userId);
         let res = await fetch(url, {
             method: "GET",
@@ -140,7 +140,7 @@ class MerchantClient extends events_1.EventEmitter {
     async transactions(ids) {
         let result = [];
         while (ids.length > 0) {
-            let res = await fetch(this.baseURL + "/transactions", {
+            let res = await fetch(this.baseURL + "/api/transactions", {
                 method: "POST",
                 headers: {
                     "x-api-key": this.apiKey,
