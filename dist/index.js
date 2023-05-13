@@ -67,6 +67,8 @@ class MerchantClient extends events_1.EventEmitter {
                 "x-api-key": this.apiKey
             },
         });
+        if (res.status != 200)
+            throw await res.json();
         this.handleRates(await res.json());
         return this.rates;
     }
@@ -85,6 +87,8 @@ class MerchantClient extends events_1.EventEmitter {
                 'Content-Type': 'application/json'
             },
         });
+        if (res.status != 200)
+            throw await res.json();
         const body = await res.json();
         return body;
     }
@@ -105,6 +109,8 @@ class MerchantClient extends events_1.EventEmitter {
                 renewal: wallet.renewal
             }),
         });
+        if (res.status != 200)
+            throw await res.json();
         const body = await res.json();
         return {
             ...body,
@@ -127,6 +133,8 @@ class MerchantClient extends events_1.EventEmitter {
         });
         if (res.status == 404)
             return null;
+        else if (res.status != 200)
+            throw await res.json();
         const body = await res.json();
         return {
             ...body,
@@ -148,6 +156,8 @@ class MerchantClient extends events_1.EventEmitter {
                 },
                 body: JSON.stringify({ ids: ids.splice(0, 100) })
             });
+            if (res.status != 200)
+                throw await res.json();
             result.push(...await res.json());
         }
         return result;
