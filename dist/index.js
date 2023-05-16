@@ -3,10 +3,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MerchantClient = void 0;
+exports.MerchantClient = exports.MerchantError = void 0;
 const eventsource_1 = __importDefault(require("eventsource"));
 const events_1 = require("events");
 const MIN_RATE_UPDATE_INTERVAL = 10000;
+class MerchantError extends Error {
+    constructor(err) {
+        super("");
+    }
+}
+exports.MerchantError = MerchantError;
 class MerchantClient extends events_1.EventEmitter {
     apiKey;
     ts;
@@ -68,7 +74,7 @@ class MerchantClient extends events_1.EventEmitter {
             },
         });
         if (res.status != 200)
-            throw await res.json();
+            throw new Error(await res.text());
         this.handleRates(await res.json());
         return this.rates;
     }
@@ -88,7 +94,7 @@ class MerchantClient extends events_1.EventEmitter {
             },
         });
         if (res.status != 200)
-            throw await res.json();
+            throw new Error(await res.text());
         const body = await res.json();
         return body;
     }
@@ -110,7 +116,7 @@ class MerchantClient extends events_1.EventEmitter {
             }),
         });
         if (res.status != 200)
-            throw await res.json();
+            throw new Error(await res.text());
         const body = await res.json();
         return {
             ...body,
@@ -134,7 +140,7 @@ class MerchantClient extends events_1.EventEmitter {
         if (res.status == 404)
             return null;
         else if (res.status != 200)
-            throw await res.json();
+            throw new Error(await res.text());
         const body = await res.json();
         return {
             ...body,
@@ -157,7 +163,7 @@ class MerchantClient extends events_1.EventEmitter {
                 body: JSON.stringify({ ids: ids.splice(0, 100) })
             });
             if (res.status != 200)
-                throw await res.json();
+                throw new Error(await res.text());
             result.push(...await res.json());
         }
         return result;

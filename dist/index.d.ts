@@ -36,6 +36,9 @@ interface WalletByUserId {
      */
     renewal?: boolean;
 }
+export declare class MerchantError extends Error {
+    constructor(err: object);
+}
 export declare interface MerchantClient {
     on(event: 'transaction', listener: (tx: Transaction) => void): this;
     once(event: 'transaction', listener: (tx: Transaction) => void): this;

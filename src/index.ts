@@ -42,6 +42,12 @@ interface WalletByUserId {
 	renewal?: boolean;
 }
 
+export class MerchantError extends Error {
+	constructor(err: object) {
+		super("")
+	}
+}
+
 export declare interface MerchantClient {
 	on(event: 'transaction', listener: (tx: Transaction) => void): this;
 	once(event: 'transaction', listener: (tx: Transaction) => void): this;
@@ -141,8 +147,8 @@ export class MerchantClient extends EventEmitter {
 				"x-api-key": this.apiKey
 			},
 		});
-		
-		if (res.status != 200) throw await res.json();
+
+		if (res.status != 200) throw new Error(await res.text());
 
 		this.handleRates(await res.json());
 		return this.rates;
@@ -164,7 +170,7 @@ export class MerchantClient extends EventEmitter {
 			},
 		});
 
-		if (res.status != 200) throw await res.json();
+		if (res.status != 200) throw new Error(await res.text());
 
 		const body = await res.json() as {
 			address: string;
@@ -194,7 +200,7 @@ export class MerchantClient extends EventEmitter {
 			}),
 		});
 
-		if (res.status != 200) throw await res.json();
+		if (res.status != 200) throw new Error(await res.text());
 
 		const body = await res.json() as {
 			address: string;
@@ -226,7 +232,7 @@ export class MerchantClient extends EventEmitter {
 		});
 
 		if (res.status == 404) return null;
-		else if (res.status != 200) throw await res.json();
+		else if (res.status != 200) throw new Error(await res.text());
 
 		const body = await res.json() as { id: string, subId: number, address: string, expire: number, actuallyExpire: number };
 
@@ -252,7 +258,7 @@ export class MerchantClient extends EventEmitter {
 				body: JSON.stringify({ ids: ids.splice(0, 100) })
 			});
 
-			if (res.status != 200) throw await res.json();
+			if (res.status != 200) throw new Error(await res.text());
 
 			result.push(...await res.json());
 		}
