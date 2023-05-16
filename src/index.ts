@@ -160,7 +160,7 @@ export class MerchantClient extends EventEmitter {
 	async getWallet(wallet: WalletById) {
 		const url = new URL("/api/wallet/unique", this.baseURL);
 		url.searchParams.set("walletId", wallet.walletId);
-		if (wallet.walletSubId) url.searchParams.set("walletSubId", wallet.walletSubId.toString());
+		if (typeof wallet.walletSubId === 'number') url.searchParams.set("walletSubId", wallet.walletSubId.toString());
 
 		let res = await fetch(url, {
 			method: "GET",
