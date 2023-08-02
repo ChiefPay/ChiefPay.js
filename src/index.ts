@@ -1,6 +1,7 @@
 import EventSource from "eventsource";
 import { EventEmitter } from "events";
 import { Transaction } from "./types";
+export { Transaction } from "./types";
 
 const MIN_RATE_UPDATE_INTERVAL = 10000;
 

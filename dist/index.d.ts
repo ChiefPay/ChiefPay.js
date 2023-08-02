@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { EventEmitter } from "events";
 import { Transaction } from "./types";
+export { Transaction } from "./types";
 interface MerchantClientSettings {
     apiKey: string;
     /**
@@ -137,4 +138,3 @@ export declare class MerchantClient extends EventEmitter {
      */
     transactions(ids: number[]): Promise<Transaction[]>;
 }
-export {};
