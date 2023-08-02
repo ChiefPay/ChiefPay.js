@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { EventEmitter } from "events";
-import { Transaction } from "merchant-types";
+import { Transaction } from "./types";
 interface MerchantClientSettings {
     apiKey: string;
     /**
@@ -35,9 +35,6 @@ interface WalletByUserId {
      * @default false
      */
     renewal?: boolean;
-}
-export declare class MerchantError extends Error {
-    constructor(err: object);
 }
 export declare interface MerchantClient {
     on(event: 'transaction', listener: (tx: Transaction) => void): this;

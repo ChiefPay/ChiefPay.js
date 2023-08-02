@@ -1,6 +1,6 @@
 import EventSource from "eventsource";
 import { EventEmitter } from "events";
-import { Transaction } from "merchant-types";
+import { Transaction } from "./types";
 
 const MIN_RATE_UPDATE_INTERVAL = 10000;
 
@@ -40,12 +40,6 @@ interface WalletByUserId {
 	 * @default false
 	 */
 	renewal?: boolean;
-}
-
-export class MerchantError extends Error {
-	constructor(err: object) {
-		super("")
-	}
 }
 
 export declare interface MerchantClient {
