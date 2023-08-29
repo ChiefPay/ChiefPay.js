@@ -1,6 +1,7 @@
 {
   "name": "merchantclient",
   "version": "0.8.1",
+	"private": true,
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
