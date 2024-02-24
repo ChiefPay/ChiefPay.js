@@ -1,47 +1,65 @@
 /// <reference types="node" />
 import { EventEmitter } from "events";
-import { Transaction } from "./types";
-export { Transaction } from "./types";
+import { Invoice as InvoiceString, Transaction as TransactionString, StaticWallet } from "./types";
+export { InvoiceStatus, StaticWallet } from "./types";
+export interface Invoice extends Omit<InvoiceString, "expiredAt" | "createdAt"> {
+    expiredAt: Date;
+    createdAt: Date;
+}
+export interface Transaction extends Omit<TransactionString, "blockCreatedAt" | "createdAt"> {
+    createdAt: Date;
+    blockCreatedAt: Date;
+}
+export type Notification = {
+    transaction: Transaction;
+    invoice: Invoice | null;
+} | {
+    transaction: null;
+    invoice: Invoice;
+};
+export type Rates = {
+    [token: string]: string;
+};
 interface MerchantClientSettings {
     apiKey: string;
     /**
      * url like http://hostname:port
      */
     baseURL: `${'http' | 'https'}://${string}:${number}`;
-    ts: number;
 }
-interface WalletById {
+interface CreateWallet {
     /**
-     * id пользователя или абстрактный id привязанный к конкретному кошельку
+     * какие-то данные для идентификации в системе (например, id пользователя)
      */
-    walletId: string;
-    /**
-     * SubId нужен для мультикошельков
-     */
-    walletSubId?: number;
+    additional: string;
 }
-interface WalletByUserId {
-    userId: string;
+interface GetWallet {
     /**
-     * Дата когда придет уведомление об окончании аренды
+     * uuid кошелька
      */
-    expire: Date;
+    id: string;
+}
+interface CreateInvoice {
     /**
-     * Когда кошелек перестает быть привязаным и может быть назначен кому угодно
-     * @default {expire}
+     * какие-то данные для идентификации в системе (например, id оплаты)
      */
-    actuallyExpire?: Date;
+    additional: string;
     /**
-     * Переписать expire и actuallyExpire если еще не истек
-     * @default false
+     * сумма платежа в долларах
      */
-    renewal?: boolean;
+    amount?: string;
+}
+interface GetInvoice {
+    /**
+     * uuid инвойса
+     */
+    id: string;
 }
 export declare interface MerchantClient {
-    on(event: 'transaction', listener: (tx: Transaction) => void): this;
-    once(event: 'transaction', listener: (tx: Transaction) => void): this;
-    off(event: 'transaction', listener: (tx: Transaction) => void): this;
-    emit(event: 'transaction', tx: Transaction): boolean;
+    on(event: 'notification', listener: (notification: Notification) => void): this;
+    once(event: 'notification', listener: (notification: Notification) => void): this;
+    off(event: 'notification', listener: (notification: Notification) => void): this;
+    emit(event: 'notification', notification: Notification): boolean;
     on(event: 'connected', listener: () => void): this;
     once(event: 'connected', listener: () => void): this;
     off(event: 'connected', listener: () => void): this;
@@ -50,91 +68,50 @@ export declare interface MerchantClient {
     once(event: 'error', listener: (err: any) => void): this;
     off(event: 'error', listener: (err: any) => void): this;
     emit(event: 'error', err: any): boolean;
-    on(event: 'rates', listener: (rates: typeof MerchantClient.prototype.rates) => void): this;
-    once(event: 'rates', listener: (rates: typeof MerchantClient.prototype.rates) => void): this;
-    off(event: 'rates', listener: (rates: typeof MerchantClient.prototype.rates) => void): this;
-    emit(event: 'rates', rates: typeof MerchantClient.prototype.rates): boolean;
-    on(event: 'walletExpire', listener: (wallet: {
-        walletId: string;
-        walletSubId: number;
-        userId: string;
-    }) => void): this;
-    once(event: 'walletExpire', listener: (wallet: {
-        walletId: string;
-        walletSubId: number;
-        userId: string;
-    }) => void): this;
-    off(event: 'walletExpire', listener: (wallet: {
-        walletId: string;
-        walletSubId: number;
-        userId: string;
-    }) => void): this;
-    emit(event: 'walletExpire', wallet: {
-        walletId: string;
-        walletSubId: number;
-        userId: string;
-    }): boolean;
+    on(event: 'rates', listener: (rates: Rates) => void): this;
+    once(event: 'rates', listener: (rates: Rates) => void): this;
+    off(event: 'rates', listener: (rates: Rates) => void): this;
+    emit(event: 'rates', rates: Rates): boolean;
 }
 export declare class MerchantClient extends EventEmitter {
     apiKey: string;
-    private ts;
     private lastRatesUpdate;
     private es;
-    private lastPing;
     private baseURL;
-    rates: {
-        [chain: number]: {
-            [token: string]: string;
-        };
-    };
-    constructor({ apiKey, baseURL, ts }: MerchantClientSettings);
+    rates: Rates;
+    constructor({ apiKey, baseURL }: MerchantClientSettings);
     /**
      * Закрывает соединение с SSE
      */
     stop(): void;
     private onMessage;
+    private formatInvoice;
+    private formatTransaction;
+    private formatNotification;
     private handleRates;
     /**
      *
      * @deprecated Курсы валют теперь передаются через SSE. Слушать так же через .on("rates")
      */
-    updateRates(): Promise<{
-        [chain: number]: {
-            [token: string]: string;
-        };
-    }>;
+    updateRates(): Promise<Rates>;
+    /**
+     * Создает классический кошелек без аренды
+     */
+    createWallet(wallet: CreateWallet): Promise<StaticWallet>;
     /**
      * Выдает классический кошелек без аренды
      */
-    getWallet(wallet: WalletById): Promise<{
-        address: string;
-        id: string;
-        subId: number;
-    }>;
+    getWallet(wallet: GetWallet): Promise<StaticWallet>;
     /**
-     * Арендует кошелек для пользователя
+     * Создает инвойс
      */
-    rentWallet(wallet: WalletByUserId): Promise<{
-        expire: Date;
-        actuallyExpire: Date;
-        address: string;
-        id: string;
-        subId: number;
-    }>;
+    createInvoice(invoice: CreateInvoice): Promise<Invoice>;
     /**
-     * Ищет уже арендованный кошелек у пользователя
+     * Ищет уже созданный инвойс
      */
-    searchWallet(wallet: {
-        userId: string;
-    }): Promise<{
-        expire: Date;
-        actuallyExpire: Date;
-        id: string;
-        subId: number;
-        address: string;
-    } | null>;
+    getInvoice(invoice: GetInvoice): Promise<Invoice>;
     /**
-     * Выдает транзакции по id
+     * Выдает историю уведомлений
      */
-    transactions(ids: number[]): Promise<Transaction[]>;
+    history(fromDate: Date, toDate?: Date): Promise<Notification[]>;
 }

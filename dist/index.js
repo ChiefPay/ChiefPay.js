@@ -9,29 +9,23 @@ const events_1 = require("events");
 const MIN_RATE_UPDATE_INTERVAL = 10000;
 class MerchantClient extends events_1.EventEmitter {
     apiKey;
-    ts;
     lastRatesUpdate = 0;
     es;
-    lastPing = new Date();
     baseURL;
     rates = {};
-    constructor({ apiKey, baseURL, ts }) {
+    constructor({ apiKey, baseURL }) {
         super();
         this.apiKey = apiKey;
-        this.ts = ts;
         this.baseURL = baseURL;
         this.es = new eventsource_1.default(this.baseURL + "/api/sse", {
             headers: {
                 "x-api-key": this.apiKey,
-                "ts": this.ts.toString()
             }
         });
         this.es.onopen = () => this.emit("connected");
         this.es.addEventListener("rates", event => this.handleRates(JSON.parse(event.data)));
-        this.es.addEventListener("walletExpire", event => this.emit("walletExpire", JSON.parse(event.data)));
         this.es.onmessage = this.onMessage.bind(this);
         this.es.onerror = err => this.emit("error", err);
-        this.es.addEventListener("ping", event => this.lastPing = new Date());
     }
     /**
      * Закрывает соединение с SSE
@@ -40,17 +34,34 @@ class MerchantClient extends events_1.EventEmitter {
         this.es.close();
     }
     onMessage(event) {
-        let data = JSON.parse(event.data);
-        this.ts = +event.lastEventId;
-        this.emit("transaction", data);
+        this.emit("notification", this.formatNotification(JSON.parse(event.data)));
+    }
+    formatInvoice(invoiceString) {
+        if (invoiceString === null)
+            return null;
+        return {
+            ...invoiceString,
+            createdAt: new Date(invoiceString.createdAt),
+            expiredAt: new Date(invoiceString.expiredAt),
+        };
+    }
+    formatTransaction(transactionString) {
+        if (!transactionString)
+            return null;
+        return {
+            ...transactionString,
+            createdAt: new Date(transactionString.createdAt),
+            blockCreatedAt: new Date(transactionString.blockCreatedAt),
+        };
+    }
+    formatNotification(notificationString) {
+        return {
+            invoice: this.formatInvoice(notificationString.invoice),
+            transaction: this.formatTransaction(notificationString.transaction)
+        };
     }
     async handleRates(rates) {
         this.rates = rates;
-        for (let chain in this.rates) {
-            for (let token in this.rates[chain]) {
-                this.rates[chain][token] = (Number(BigInt(this.rates[chain][token]) / (10n ** 15n)) / 1000).toFixed(2);
-            }
-        }
         this.emit("rates", this.rates);
     }
     /**
@@ -73,57 +84,29 @@ class MerchantClient extends events_1.EventEmitter {
         return this.rates;
     }
     /**
-     * Выдает классический кошелек без аренды
+     * Создает классический кошелек без аренды
      */
-    async getWallet(wallet) {
-        const url = new URL("/api/wallet/unique", this.baseURL);
-        url.searchParams.set("walletId", wallet.walletId);
-        if (typeof wallet.walletSubId === 'number')
-            url.searchParams.set("walletSubId", wallet.walletSubId.toString());
-        let res = await fetch(url, {
-            method: "GET",
-            headers: {
-                "x-api-key": this.apiKey,
-                'Content-Type': 'application/json'
-            },
-        });
-        if (res.status != 200)
-            throw new Error(await res.text());
-        const body = await res.json();
-        return body;
-    }
-    /**
-     * Арендует кошелек для пользователя
-     */
-    async rentWallet(wallet) {
-        let res = await fetch(this.baseURL + "/api/wallet/rent", {
+    async createWallet(wallet) {
+        let res = await fetch(this.baseURL + "/api/wallet", {
             method: "POST",
             headers: {
                 "x-api-key": this.apiKey,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                userId: wallet.userId,
-                expire: wallet.expire.getTime(),
-                actuallyExpire: wallet.actuallyExpire?.getTime(),
-                renewal: wallet.renewal
+                additional: wallet.additional,
             }),
         });
         if (res.status != 200)
             throw new Error(await res.text());
-        const body = await res.json();
-        return {
-            ...body,
-            expire: new Date(body.expire),
-            actuallyExpire: new Date(body.actuallyExpire),
-        };
+        return res.json();
     }
     /**
-     * Ищет уже арендованный кошелек у пользователя
+     * Выдает классический кошелек без аренды
      */
-    async searchWallet(wallet) {
-        const url = new URL("/api/wallet/search", this.baseURL);
-        url.searchParams.set("userId", wallet.userId);
+    async getWallet(wallet) {
+        const url = new URL("/api/wallet", this.baseURL);
+        url.searchParams.set("id", wallet.id);
         let res = await fetch(url, {
             method: "GET",
             headers: {
@@ -132,35 +115,61 @@ class MerchantClient extends events_1.EventEmitter {
             },
         });
         if (res.status == 404)
-            return null;
+            throw new Error(`Wallet ${wallet.id} not found`);
         else if (res.status != 200)
             throw new Error(await res.text());
-        const body = await res.json();
-        return {
-            ...body,
-            expire: new Date(body.expire),
-            actuallyExpire: new Date(body.actuallyExpire),
-        };
+        return res.json();
     }
     /**
-     * Выдает транзакции по id
+     * Создает инвойс
      */
-    async transactions(ids) {
-        let result = [];
-        while (ids.length > 0) {
-            let res = await fetch(this.baseURL + "/api/transactions", {
-                method: "POST",
-                headers: {
-                    "x-api-key": this.apiKey,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ ids: ids.splice(0, 100) })
-            });
-            if (res.status != 200)
-                throw new Error(await res.text());
-            result.push(...await res.json());
-        }
-        return result;
+    async createInvoice(invoice) {
+        let res = await fetch(this.baseURL + "/api/invoice", {
+            method: "POST",
+            headers: {
+                "x-api-key": this.apiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(invoice),
+        });
+        if (res.status != 200)
+            throw new Error(await res.text());
+        return this.formatInvoice(await res.json());
+    }
+    /**
+     * Ищет уже созданный инвойс
+     */
+    async getInvoice(invoice) {
+        const url = new URL("/api/wallet", this.baseURL);
+        url.searchParams.set("id", invoice.id);
+        let res = await fetch(url, {
+            method: "GET",
+            headers: {
+                "x-api-key": this.apiKey,
+                'Content-Type': 'application/json'
+            },
+        });
+        if (res.status == 404)
+            throw new Error(`Invoice ${invoice.id} not found`);
+        else if (res.status != 200)
+            throw new Error(await res.text());
+        return this.formatInvoice(await res.json());
+    }
+    /**
+     * Выдает историю уведомлений
+     */
+    async history(fromDate, toDate) {
+        let res = await fetch(this.baseURL + "/api/transactions", {
+            method: "POST",
+            headers: {
+                "x-api-key": this.apiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ fromDate: fromDate.toISOString(), toDate: toDate?.toISOString() })
+        });
+        if (res.status != 200)
+            throw new Error(await res.text());
+        return res.json().then((res) => res.map(this.formatNotification));
     }
 }
 exports.MerchantClient = MerchantClient;
