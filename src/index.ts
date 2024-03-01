@@ -234,7 +234,7 @@ export class MerchantClient extends EventEmitter {
 	 * Ищет уже созданный инвойс
 	 */
 	async getInvoice(invoice: GetInvoice): Promise<Invoice> {
-		const url = new URL("/api/wallet", this.baseURL);
+		const url = new URL("/api/invoice", this.baseURL);
 		url.searchParams.set("id", invoice.id);
 		let res = await fetch(url, {
 			method: "GET",
@@ -254,17 +254,19 @@ export class MerchantClient extends EventEmitter {
 	 * Выдает историю уведомлений
 	 */
 	async history(fromDate: Date, toDate?: Date): Promise<Notification[]> {
-		let res = await fetch(this.baseURL + "/api/transactions", {
-			method: "POST",
+		const url = new URL("/api/history", this.baseURL);
+		url.searchParams.set("fromDate", fromDate.toISOString());
+		if (toDate) url.searchParams.set("toDate", toDate.toISOString());
+		let res = await fetch(url, {
+			method: "GET",
 			headers: {
 				"x-api-key": this.apiKey,
 				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({ fromDate: fromDate.toISOString(), toDate: toDate?.toISOString() })
+			}
 		});
 
 		if (res.status != 200) throw new Error(await res.text());
 
-		return res.json().then((res: NotificationString[]) => res.map(this.formatNotification));
+		return res.json().then((res: NotificationString[]) => res.map(this.formatNotification.bind(this)));
 	}
 }
