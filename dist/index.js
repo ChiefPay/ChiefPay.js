@@ -56,6 +56,7 @@ class MerchantClient extends events_1.EventEmitter {
     }
     formatNotification(notificationString) {
         return {
+            type: notificationString.type,
             invoice: this.formatInvoice(notificationString.invoice),
             transaction: this.formatTransaction(notificationString.transaction)
         };

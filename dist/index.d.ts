@@ -10,13 +10,17 @@ export interface Transaction extends Omit<TransactionString, "blockCreatedAt" | 
     createdAt: Date;
     blockCreatedAt: Date;
 }
-export type Notification = {
+export type TransactionNotification = {
+    type: "transaction";
     transaction: Transaction;
     invoice: Invoice | null;
-} | {
+};
+export type ExpireNotification = {
+    type: "expired";
     transaction: null;
     invoice: Invoice;
 };
+export type Notification = TransactionNotification | ExpireNotification;
 export type Rates = {
     [token: string]: string;
 };

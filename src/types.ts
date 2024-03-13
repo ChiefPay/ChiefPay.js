@@ -35,5 +35,8 @@ export interface StaticWallet {
 	addresses: { [chainTypeName: string]: string };
 }
 
+export type TransactionNotification = { type: "transaction", transaction: Transaction, invoice: Invoice | null };
+export type ExpireNotification = { type: "expired", transaction: null, invoice: Invoice };
+
 //То что получает юзер
-export type Notification = { transaction: Transaction, invoice: Invoice | null } | { transaction: null, invoice: Invoice };
+export type Notification = TransactionNotification | ExpireNotification;

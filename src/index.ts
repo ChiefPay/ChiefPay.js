@@ -15,7 +15,10 @@ export interface Transaction extends Omit<TransactionString, "blockCreatedAt" | 
 	blockCreatedAt: Date;
 }
 
-export type Notification = { transaction: Transaction, invoice: Invoice | null } | { transaction: null, invoice: Invoice };
+export type TransactionNotification = { type: "transaction", transaction: Transaction, invoice: Invoice | null };
+export type ExpireNotification = { type: "expired", transaction: null, invoice: Invoice };
+
+export type Notification = TransactionNotification | ExpireNotification;
 
 export type Rates = {
 	[token: string]: string;
@@ -140,6 +143,7 @@ export class MerchantClient extends EventEmitter {
 
 	private formatNotification(notificationString: NotificationString): Notification {
 		return {
+			type: notificationString.type,
 			invoice: this.formatInvoice(notificationString.invoice),
 			transaction: this.formatTransaction(notificationString.transaction)
 		} as Notification;

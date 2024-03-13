@@ -32,10 +32,14 @@ export interface StaticWallet {
         [chainTypeName: string]: string;
     };
 }
-export type Notification = {
+export type TransactionNotification = {
+    type: "transaction";
     transaction: Transaction;
     invoice: Invoice | null;
-} | {
+};
+export type ExpireNotification = {
+    type: "expired";
     transaction: null;
     invoice: Invoice;
 };
+export type Notification = TransactionNotification | ExpireNotification;
