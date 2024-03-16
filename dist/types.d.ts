@@ -24,6 +24,9 @@ export interface Invoice {
     addresses: {
         [chainTypeName: string]: string;
     };
+    rates: {
+        [tokenName: string]: string;
+    };
 }
 export interface StaticWallet {
     id: string;

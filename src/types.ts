@@ -27,6 +27,7 @@ export interface Invoice {
 	expiredAt: string;
 
 	addresses: { [chainTypeName: string]: string };
+	rates: { [tokenName: string]: string };
 }
 
 export interface StaticWallet {
