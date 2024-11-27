@@ -1,13 +1,13 @@
 import EventSource from "eventsource";
 import { EventEmitter } from "events";
-import { Invoice, Notification, Transaction, StaticWallet, Response } from "./types";
+import { Invoice, Notification, StaticWallet, Response } from "./types";
 export { InvoiceStatus, StaticWallet } from "./types";
 
 const MIN_RATE_UPDATE_INTERVAL = 10000;
 
 export type Rates = { name: string, rate: string }[];
 
-interface MerchantClientSettings {
+interface ChiefPayClientSettings {
 	apiKey: string;
 	/**
 	 * url like https://hostname or https://hostname:port
@@ -90,7 +90,7 @@ interface GetInvoiceByOrderId {
 
 type GetInvoice = GetInvoiceById | GetInvoiceByOrderId;
 
-export declare interface MerchantClient {
+export declare interface ChiefPayClient {
 	on(event: 'notification', listener: (notification: Notification) => void): this;
 	once(event: 'notification', listener: (notification: Notification) => void): this;
 	off(event: 'notification', listener: (notification: Notification) => void): this;
@@ -112,14 +112,14 @@ export declare interface MerchantClient {
 	emit(event: 'rates', rates: Rates): boolean;
 }
 
-export class MerchantClient extends EventEmitter {
+export class ChiefPayClient extends EventEmitter {
 	apiKey: string;
 	private lastRatesUpdate: number = 0;
 	private es: EventSource;
 	private baseURL: string;
 	rates: Rates = [];
 
-	constructor({ apiKey, baseURL }: MerchantClientSettings) {
+	constructor({ apiKey, baseURL }: ChiefPayClientSettings) {
 		super();
 		this.apiKey = apiKey;
 		this.baseURL = baseURL ?? "https://api.chiefpay.org";
@@ -158,7 +158,7 @@ export class MerchantClient extends EventEmitter {
 	 * @deprecated Use .on("rates") or .rates instead
 	 */
 	async updateRates() {
-		if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL) throw new Error("MerchantClient: rateUpdateInterval is too short");
+		if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL) throw new Error("ChiefPayClient: rateUpdateInterval is too short");
 		this.lastRatesUpdate = Date.now();
 
 		const data = await this.makeRequest<Rates>(new URL("/rates", this.baseURL));

@@ -3,11 +3,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MerchantClient = void 0;
+exports.ChiefPayClient = void 0;
 const eventsource_1 = __importDefault(require("eventsource"));
 const events_1 = require("events");
 const MIN_RATE_UPDATE_INTERVAL = 10000;
-class MerchantClient extends events_1.EventEmitter {
+class ChiefPayClient extends events_1.EventEmitter {
     apiKey;
     lastRatesUpdate = 0;
     es;
@@ -47,7 +47,7 @@ class MerchantClient extends events_1.EventEmitter {
      */
     async updateRates() {
         if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL)
-            throw new Error("MerchantClient: rateUpdateInterval is too short");
+            throw new Error("ChiefPayClient: rateUpdateInterval is too short");
         this.lastRatesUpdate = Date.now();
         const data = await this.makeRequest(new URL("/rates", this.baseURL));
         this.handleRates(data);
@@ -117,5 +117,5 @@ class MerchantClient extends events_1.EventEmitter {
         return json.data;
     }
 }
-exports.MerchantClient = MerchantClient;
+exports.ChiefPayClient = ChiefPayClient;
 //# sourceMappingURL=index.js.map

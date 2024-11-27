@@ -5,7 +5,7 @@ export type Rates = {
     name: string;
     rate: string;
 }[];
-interface MerchantClientSettings {
+interface ChiefPayClientSettings {
     apiKey: string;
     /**
      * url like https://hostname or https://hostname:port
@@ -79,7 +79,7 @@ interface GetInvoiceByOrderId {
     orderId: string;
 }
 type GetInvoice = GetInvoiceById | GetInvoiceByOrderId;
-export declare interface MerchantClient {
+export declare interface ChiefPayClient {
     on(event: 'notification', listener: (notification: Notification) => void): this;
     once(event: 'notification', listener: (notification: Notification) => void): this;
     off(event: 'notification', listener: (notification: Notification) => void): this;
@@ -97,13 +97,13 @@ export declare interface MerchantClient {
     off(event: 'rates', listener: (rates: Rates) => void): this;
     emit(event: 'rates', rates: Rates): boolean;
 }
-export declare class MerchantClient extends EventEmitter {
+export declare class ChiefPayClient extends EventEmitter {
     apiKey: string;
     private lastRatesUpdate;
     private es;
     private baseURL;
     rates: Rates;
-    constructor({ apiKey, baseURL }: MerchantClientSettings);
+    constructor({ apiKey, baseURL }: ChiefPayClientSettings);
     /**
      * Stop SSE connection (graceful shutdown)
      */
