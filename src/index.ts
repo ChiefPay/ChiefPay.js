@@ -116,16 +116,15 @@ export class ChiefPayClient extends EventEmitter {
 	apiKey: string;
 	private lastRatesUpdate: number = 0;
 	private es: EventSource;
-	private baseURL: string;
+	private baseURL: URL;
 	rates: Rates = [];
 
 	constructor({ apiKey, baseURL }: ChiefPayClientSettings) {
 		super();
 		this.apiKey = apiKey;
-		this.baseURL = baseURL ?? "https://api.chiefpay.org";
-		this.baseURL += "/v1";
+		this.baseURL = new URL((baseURL ?? "https://api.chiefpay.org") + "/v1/");
 
-		this.es = new EventSource(this.baseURL + "/sse", {
+		this.es = new EventSource(this.baseURL + "sse", {
 			headers: {
 				"x-api-key": this.apiKey,
 			}
@@ -161,7 +160,7 @@ export class ChiefPayClient extends EventEmitter {
 		if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL) throw new Error("ChiefPayClient: rateUpdateInterval is too short");
 		this.lastRatesUpdate = Date.now();
 
-		const data = await this.makeRequest<Rates>(new URL("/rates", this.baseURL));
+		const data = await this.makeRequest<Rates>(new URL("rates/", this.baseURL));
 
 		this.handleRates(data);
 		return this.rates;
@@ -171,7 +170,7 @@ export class ChiefPayClient extends EventEmitter {
 	 * Create new static wallet
 	 */
 	async createWallet(wallet: CreateWallet): Promise<StaticWallet> {
-		const data = await this.makeRequest<StaticWallet>(new URL("/wallet", this.baseURL), wallet);
+		const data = await this.makeRequest<StaticWallet>(new URL("wallet/", this.baseURL), wallet);
 
 		return data;
 	}
@@ -180,7 +179,7 @@ export class ChiefPayClient extends EventEmitter {
 	 * Get static wallet info by id
 	 */
 	async getWallet(wallet: GetWallet): Promise<StaticWallet> {
-		const url = new URL("/wallet", this.baseURL);
+		const url = new URL("wallet/", this.baseURL);
 		for (let key in wallet) url.searchParams.set(key, (wallet as any)[key]);
 		const data = await this.makeRequest<StaticWallet>(url);
 
@@ -192,7 +191,7 @@ export class ChiefPayClient extends EventEmitter {
 	 * Create new invoice
 	 */
 	async createInvoice(invoice: CreateInvoice): Promise<Invoice> {
-		const data = await this.makeRequest<Invoice>(new URL("/invoice", this.baseURL), invoice);
+		const data = await this.makeRequest<Invoice>(new URL("invoice/", this.baseURL), invoice);
 
 		return data;
 	}
@@ -201,7 +200,7 @@ export class ChiefPayClient extends EventEmitter {
 	 * Get invoice info by id
 	 */
 	async getInvoice(invoice: GetInvoice): Promise<Invoice> {
-		const url = new URL("/invoice", this.baseURL);
+		const url = new URL("invoice/", this.baseURL);
 		for (let key in invoice) url.searchParams.set(key, (invoice as any)[key]);
 		const data = await this.makeRequest<Invoice>(url);
 
@@ -212,7 +211,7 @@ export class ChiefPayClient extends EventEmitter {
 	 * Notifications history
 	 */
 	async history(fromDate: Date, toDate?: Date): Promise<Notification[]> {
-		const url = new URL("/history", this.baseURL);
+		const url = new URL("history/", this.baseURL);
 		url.searchParams.set("fromDate", fromDate.toISOString());
 		if (toDate) url.searchParams.set("toDate", toDate.toISOString());
 		const data = await this.makeRequest<Notification[]>(url);

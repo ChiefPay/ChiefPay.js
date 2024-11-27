@@ -16,9 +16,8 @@ class ChiefPayClient extends events_1.EventEmitter {
     constructor({ apiKey, baseURL }) {
         super();
         this.apiKey = apiKey;
-        this.baseURL = baseURL ?? "https://api.chiefpay.org";
-        this.baseURL += "/v1";
-        this.es = new eventsource_1.default(this.baseURL + "/sse", {
+        this.baseURL = new URL((baseURL ?? "https://api.chiefpay.org") + "/v1/");
+        this.es = new eventsource_1.default(this.baseURL + "sse", {
             headers: {
                 "x-api-key": this.apiKey,
             }
@@ -49,7 +48,7 @@ class ChiefPayClient extends events_1.EventEmitter {
         if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL)
             throw new Error("ChiefPayClient: rateUpdateInterval is too short");
         this.lastRatesUpdate = Date.now();
-        const data = await this.makeRequest(new URL("/rates", this.baseURL));
+        const data = await this.makeRequest(new URL("rates/", this.baseURL));
         this.handleRates(data);
         return this.rates;
     }
@@ -57,14 +56,14 @@ class ChiefPayClient extends events_1.EventEmitter {
      * Create new static wallet
      */
     async createWallet(wallet) {
-        const data = await this.makeRequest(new URL("/wallet", this.baseURL), wallet);
+        const data = await this.makeRequest(new URL("wallet/", this.baseURL), wallet);
         return data;
     }
     /**
      * Get static wallet info by id
      */
     async getWallet(wallet) {
-        const url = new URL("/wallet", this.baseURL);
+        const url = new URL("wallet/", this.baseURL);
         for (let key in wallet)
             url.searchParams.set(key, wallet[key]);
         const data = await this.makeRequest(url);
@@ -74,14 +73,14 @@ class ChiefPayClient extends events_1.EventEmitter {
      * Create new invoice
      */
     async createInvoice(invoice) {
-        const data = await this.makeRequest(new URL("/invoice", this.baseURL), invoice);
+        const data = await this.makeRequest(new URL("invoice/", this.baseURL), invoice);
         return data;
     }
     /**
      * Get invoice info by id
      */
     async getInvoice(invoice) {
-        const url = new URL("/invoice", this.baseURL);
+        const url = new URL("invoice/", this.baseURL);
         for (let key in invoice)
             url.searchParams.set(key, invoice[key]);
         const data = await this.makeRequest(url);
@@ -91,7 +90,7 @@ class ChiefPayClient extends events_1.EventEmitter {
      * Notifications history
      */
     async history(fromDate, toDate) {
-        const url = new URL("/history", this.baseURL);
+        const url = new URL("history/", this.baseURL);
         url.searchParams.set("fromDate", fromDate.toISOString());
         if (toDate)
             url.searchParams.set("toDate", toDate.toISOString());
