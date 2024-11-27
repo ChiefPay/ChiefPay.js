@@ -1,43 +1,70 @@
-export type InvoiceStatus = "wait" | "complete" | "expired" | "overPaid" | "underPaid";
+export type InvoiceStatus = "WAIT" | "COMPLETE" | "EXPIRED" | "OVER_PAID" | "UNDER_PAID";
 
-//То что получает юзер
-export interface Transaction {
-	txid: string;
-	createdAt: string;
-	blockCreatedAt: string;
-	chainId: number;
-	token: string;
-	value: string;
-	fee: string;
-	usd: string;
-	wallet?: {
-		id: string;
-		additional: string;
-	}
+export interface SuccessResponse<T> {
+	status: "success";
+	data: T;
 }
 
-//То что получает юзер
+export interface ErrorResponse {
+	status: "error";
+	message: string;
+}
+
+export type Response<T> = SuccessResponse<T> | ErrorResponse;
+
+interface ChainToken {
+	chain: string;
+	token: string;
+	address: string;
+	tokenRate: string;
+}
+
+interface FiatDetails {
+	name: string;
+	amount: string;
+	payedAmount: string;
+	feeRate: string;
+	bank: string;
+	requisites: string;
+	cardOwner: string;
+}
+
+export interface Transaction {
+	txid: string;
+	chain: string;
+	token: string;
+	value: string;
+	usd: string;
+	fee: string;
+	createdAt: string;
+	blockCreatedAt: string;
+	wallet: StaticWallet;
+}
+
 export interface Invoice {
 	id: string;
-	additional?: string;
+	orderId?: string;
+	description?: string;
 	status: InvoiceStatus;
 	amount?: string;
 	payedAmount: string;
+	accuracy: string;
+	discount: string;
+	feeIncluded: boolean;
 	createdAt: string;
 	expiredAt: string;
 
-	addresses: { [chainTypeName: string]: string };
-	rates: { [tokenName: string]: string };
+	addresses: ChainToken[];
+	FiatDetails: FiatDetails[];
 }
 
 export interface StaticWallet {
 	id: string;
-	additional: string;
-	addresses: { [chainTypeName: string]: string };
+	orderId: string;
+	addresses: ChainToken[];
 }
 
-export type TransactionNotification = { type: "transaction", transaction: Transaction, invoice: Invoice | null };
-export type ExpireNotification = { type: "expired", transaction: null, invoice: Invoice };
+export type TransactionNotification = { type: "transaction", transaction: Transaction };
+export type InvoiceNotification = { type: "invoice", invoice: Invoice };
 
-//То что получает юзер
-export type Notification = TransactionNotification | ExpireNotification;
+export type Notification = TransactionNotification | InvoiceNotification;

@@ -12,12 +12,13 @@ class MerchantClient extends events_1.EventEmitter {
     lastRatesUpdate = 0;
     es;
     baseURL;
-    rates = {};
+    rates = [];
     constructor({ apiKey, baseURL }) {
         super();
         this.apiKey = apiKey;
-        this.baseURL = baseURL;
-        this.es = new eventsource_1.default(this.baseURL + "/api/sse", {
+        this.baseURL = baseURL ?? "https://api.chiefpay.org";
+        this.baseURL += "/v1";
+        this.es = new eventsource_1.default(this.baseURL + "/sse", {
             headers: {
                 "x-api-key": this.apiKey,
             }
@@ -28,152 +29,92 @@ class MerchantClient extends events_1.EventEmitter {
         this.es.onerror = err => this.emit("error", err);
     }
     /**
-     * Закрывает соединение с SSE
+     * Stop SSE connection (graceful shutdown)
      */
     stop() {
         this.es.close();
     }
     onMessage(event) {
-        this.emit("notification", this.formatNotification(JSON.parse(event.data)));
-    }
-    formatInvoice(invoiceString) {
-        if (invoiceString === null)
-            return null;
-        return {
-            ...invoiceString,
-            createdAt: new Date(invoiceString.createdAt),
-            expiredAt: new Date(invoiceString.expiredAt),
-        };
-    }
-    formatTransaction(transactionString) {
-        if (!transactionString)
-            return null;
-        return {
-            ...transactionString,
-            createdAt: new Date(transactionString.createdAt),
-            blockCreatedAt: new Date(transactionString.blockCreatedAt),
-        };
-    }
-    formatNotification(notificationString) {
-        return {
-            type: notificationString.type,
-            invoice: this.formatInvoice(notificationString.invoice),
-            transaction: this.formatTransaction(notificationString.transaction)
-        };
+        this.emit("notification", JSON.parse(event.data));
     }
     async handleRates(rates) {
         this.rates = rates;
         this.emit("rates", this.rates);
     }
     /**
-     *
-     * @deprecated Курсы валют теперь передаются через SSE. Слушать так же через .on("rates")
+     * Get rates
+     * @deprecated Use .on("rates") or .rates instead
      */
     async updateRates() {
         if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL)
             throw new Error("MerchantClient: rateUpdateInterval is too short");
         this.lastRatesUpdate = Date.now();
-        let res = await fetch(this.baseURL + "/api/rates", {
-            method: "GET",
-            headers: {
-                "x-api-key": this.apiKey
-            },
-        });
-        if (res.status != 200)
-            throw new Error(await res.text());
-        this.handleRates(await res.json());
+        const data = await this.makeRequest(new URL("/rates", this.baseURL));
+        this.handleRates(data);
         return this.rates;
     }
     /**
-     * Создает классический кошелек без аренды
+     * Create new static wallet
      */
     async createWallet(wallet) {
-        let res = await fetch(this.baseURL + "/api/wallet", {
-            method: "POST",
-            headers: {
-                "x-api-key": this.apiKey,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                additional: wallet.additional,
-            }),
-        });
-        if (res.status != 200)
-            throw new Error(await res.text());
-        return res.json();
+        const data = await this.makeRequest(new URL("/wallet", this.baseURL), wallet);
+        return data;
     }
     /**
-     * Выдает классический кошелек без аренды
+     * Get static wallet info by id
      */
     async getWallet(wallet) {
-        const url = new URL("/api/wallet", this.baseURL);
-        url.searchParams.set("id", wallet.id);
-        let res = await fetch(url, {
-            method: "GET",
-            headers: {
-                "x-api-key": this.apiKey,
-                'Content-Type': 'application/json'
-            },
-        });
-        if (res.status == 404)
-            throw new Error(`Wallet ${wallet.id} not found`);
-        else if (res.status != 200)
-            throw new Error(await res.text());
-        return res.json();
+        const url = new URL("/wallet", this.baseURL);
+        for (let key in wallet)
+            url.searchParams.set(key, wallet[key]);
+        const data = await this.makeRequest(url);
+        return data;
     }
     /**
-     * Создает инвойс
+     * Create new invoice
      */
     async createInvoice(invoice) {
-        let res = await fetch(this.baseURL + "/api/invoice", {
-            method: "POST",
-            headers: {
-                "x-api-key": this.apiKey,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(invoice),
-        });
-        if (res.status != 200)
-            throw new Error(await res.text());
-        return this.formatInvoice(await res.json());
+        const data = await this.makeRequest(new URL("/invoice", this.baseURL), invoice);
+        return data;
     }
     /**
-     * Ищет уже созданный инвойс
+     * Get invoice info by id
      */
     async getInvoice(invoice) {
-        const url = new URL("/api/invoice", this.baseURL);
-        url.searchParams.set("id", invoice.id);
-        let res = await fetch(url, {
-            method: "GET",
-            headers: {
-                "x-api-key": this.apiKey,
-                'Content-Type': 'application/json'
-            },
-        });
-        if (res.status == 404)
-            throw new Error(`Invoice ${invoice.id} not found`);
-        else if (res.status != 200)
-            throw new Error(await res.text());
-        return this.formatInvoice(await res.json());
+        const url = new URL("/invoice", this.baseURL);
+        for (let key in invoice)
+            url.searchParams.set(key, invoice[key]);
+        const data = await this.makeRequest(url);
+        return data;
     }
     /**
-     * Выдает историю уведомлений
+     * Notifications history
      */
     async history(fromDate, toDate) {
-        const url = new URL("/api/history", this.baseURL);
+        const url = new URL("/history", this.baseURL);
         url.searchParams.set("fromDate", fromDate.toISOString());
         if (toDate)
             url.searchParams.set("toDate", toDate.toISOString());
-        let res = await fetch(url, {
+        const data = await this.makeRequest(url);
+        return data;
+    }
+    async makeRequest(url, body) {
+        const init = {
             method: "GET",
             headers: {
                 "x-api-key": this.apiKey,
                 'Content-Type': 'application/json'
             }
-        });
-        if (res.status != 200)
-            throw new Error(await res.text());
-        return res.json().then((res) => res.map(this.formatNotification.bind(this)));
+        };
+        if (body) {
+            init.method = "POST";
+            init.body = JSON.stringify(body);
+        }
+        const res = await fetch(url, init);
+        const json = await res.json();
+        if (json.status == "error")
+            throw new Error(json.message);
+        return json.data;
     }
 }
 exports.MerchantClient = MerchantClient;

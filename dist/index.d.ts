@@ -1,64 +1,84 @@
-/// <reference types="node" />
 import { EventEmitter } from "events";
-import { Invoice as InvoiceString, Transaction as TransactionString, StaticWallet } from "./types";
+import { Invoice, Notification, StaticWallet } from "./types";
 export { InvoiceStatus, StaticWallet } from "./types";
-export interface Invoice extends Omit<InvoiceString, "expiredAt" | "createdAt"> {
-    expiredAt: Date;
-    createdAt: Date;
-}
-export interface Transaction extends Omit<TransactionString, "blockCreatedAt" | "createdAt"> {
-    createdAt: Date;
-    blockCreatedAt: Date;
-}
-export type TransactionNotification = {
-    type: "transaction";
-    transaction: Transaction;
-    invoice: Invoice | null;
-};
-export type ExpireNotification = {
-    type: "expired";
-    transaction: null;
-    invoice: Invoice;
-};
-export type Notification = TransactionNotification | ExpireNotification;
 export type Rates = {
-    [token: string]: string;
-};
+    name: string;
+    rate: string;
+}[];
 interface MerchantClientSettings {
     apiKey: string;
     /**
-     * url like http://hostname:port
+     * url like https://hostname or https://hostname:port
+     * @default https://api.chiefpay.org
      */
-    baseURL: `${'http' | 'https'}://${string}:${number}`;
+    baseURL?: string;
 }
 interface CreateWallet {
     /**
-     * какие-то данные для идентификации в системе (например, id пользователя)
+     * Order ID in your system
      */
-    additional: string;
+    orderId: string;
 }
-interface GetWallet {
+interface GetWalletById {
     /**
-     * uuid кошелька
+     * UUID of wallet
      */
     id: string;
 }
+interface GetWalletByOrderId {
+    /**
+     * Order ID in your system
+     */
+    orderId: string;
+}
+type GetWallet = GetWalletById | GetWalletByOrderId;
 interface CreateInvoice {
     /**
-     * какие-то данные для идентификации в системе (например, id оплаты)
+     * Order ID in your system
      */
-    additional: string;
+    orderId: string;
     /**
-     * сумма платежа в долларах
+     * Description will be shown on the payment page
+     */
+    description?: string;
+    /**
+     * Amount in the specified currency. If not specified, payment for any amount (useful for replenishing the balance) only in crypto!!!
      */
     amount?: string;
-}
-interface GetInvoice {
     /**
-     * uuid инвойса
+     * 3-letter code in ISO 4217
+     * @default USD
+     */
+    currency?: string;
+    /**
+     * true to add commission to amount
+     * @default false
+     */
+    feeIncluded?: boolean;
+    /**
+     * Allowable inaccuracy of the payment amount. From 0.00 to 0.05 where 0.05 is 5% of the amount
+     * @default 0
+     */
+    accuracy?: string;
+    /**
+     * Discount or markup. From -0.99 to 0.99 where 0.05 is 5% discount and -0.05 is 5% markup.
+     * @default 0
+     */
+    discount?: string;
+}
+interface GetInvoiceById {
+    /**
+     * UUID of invoice
      */
     id: string;
 }
+interface GetInvoiceByOrderId {
+    /**
+     * Order ID in your system
+     */
+    orderId: string;
+}
+type GetInvoice = GetInvoiceById | GetInvoiceByOrderId;
 export declare interface MerchantClient {
     on(event: 'notification', listener: (notification: Notification) => void): this;
     once(event: 'notification', listener: (notification: Notification) => void): this;
@@ -85,37 +105,35 @@ export declare class MerchantClient extends EventEmitter {
     rates: Rates;
     constructor({ apiKey, baseURL }: MerchantClientSettings);
     /**
-     * Закрывает соединение с SSE
+     * Stop SSE connection (graceful shutdown)
      */
     stop(): void;
     private onMessage;
-    private formatInvoice;
-    private formatTransaction;
-    private formatNotification;
     private handleRates;
     /**
-     *
-     * @deprecated Курсы валют теперь передаются через SSE. Слушать так же через .on("rates")
+     * Get rates
+     * @deprecated Use .on("rates") or .rates instead
      */
     updateRates(): Promise<Rates>;
     /**
-     * Создает классический кошелек без аренды
+     * Create new static wallet
      */
     createWallet(wallet: CreateWallet): Promise<StaticWallet>;
     /**
-     * Выдает классический кошелек без аренды
+     * Get static wallet info by id
      */
     getWallet(wallet: GetWallet): Promise<StaticWallet>;
     /**
-     * Создает инвойс
+     * Create new invoice
      */
     createInvoice(invoice: CreateInvoice): Promise<Invoice>;
     /**
-     * Ищет уже созданный инвойс
+     * Get invoice info by id
      */
     getInvoice(invoice: GetInvoice): Promise<Invoice>;
     /**
-     * Выдает историю уведомлений
+     * Notifications history
      */
     history(fromDate: Date, toDate?: Date): Promise<Notification[]>;
+    private makeRequest;
 }
