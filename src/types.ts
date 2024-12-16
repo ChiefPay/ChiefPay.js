@@ -43,7 +43,7 @@ export interface Transaction {
 
 export interface Invoice {
 	id: string;
-	orderId?: string;
+	orderId: string;
 	description?: string;
 	status: InvoiceStatus;
 	amount?: string;

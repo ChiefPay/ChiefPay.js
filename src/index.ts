@@ -1,7 +1,7 @@
 import EventSource from "eventsource";
 import { EventEmitter } from "events";
 import { Invoice, Notification, StaticWallet, Response } from "./types";
-export { InvoiceStatus, StaticWallet } from "./types";
+export { InvoiceStatus, StaticWallet, Invoice, Notification, InvoiceNotification, TransactionNotification, Transaction } from "./types";
 
 const MIN_RATE_UPDATE_INTERVAL = 10000;
 

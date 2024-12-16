@@ -1,6 +1,6 @@
 import { EventEmitter } from "events";
 import { Invoice, Notification, StaticWallet } from "./types";
-export { InvoiceStatus, StaticWallet } from "./types";
+export { InvoiceStatus, StaticWallet, Invoice, Notification, InvoiceNotification, TransactionNotification, Transaction } from "./types";
 export type Rates = {
     name: string;
     rate: string;
