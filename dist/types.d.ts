@@ -63,4 +63,14 @@ export type InvoiceNotification = {
     invoice: Invoice;
 };
 export type Notification = TransactionNotification | InvoiceNotification;
+export type Rates = {
+    name: string;
+    rate: string;
+}[];
+export interface ServerToClientEvents {
+    notification: (notification: Notification) => void;
+    rates: (rates: Rates) => void;
+}
+export interface ClientToServerEvents {
+}
 export {};

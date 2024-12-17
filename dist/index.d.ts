@@ -1,10 +1,6 @@
 import { EventEmitter } from "events";
-import { Invoice, Notification, StaticWallet } from "./types";
-export { InvoiceStatus, StaticWallet, Invoice, Notification, InvoiceNotification, TransactionNotification, Transaction } from "./types";
-export type Rates = {
-    name: string;
-    rate: string;
-}[];
+import { Invoice, Notification, StaticWallet, Rates } from "./types";
+export { InvoiceStatus, StaticWallet, Invoice, Notification, InvoiceNotification, TransactionNotification, Transaction, Rates } from "./types";
 interface ChiefPayClientSettings {
     apiKey: string;
     /**
@@ -100,15 +96,15 @@ export declare interface ChiefPayClient {
 export declare class ChiefPayClient extends EventEmitter {
     apiKey: string;
     private lastRatesUpdate;
-    private es;
+    private socket;
     private baseURL;
     rates: Rates;
     constructor({ apiKey, baseURL }: ChiefPayClientSettings);
     /**
-     * Stop SSE connection (graceful shutdown)
+     * Stop socket.io connection (graceful shutdown)
      */
     stop(): void;
-    private onMessage;
+    private onNotification;
     private handleRates;
     /**
      * Get rates
