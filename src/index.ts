@@ -123,10 +123,11 @@ export class ChiefPayClient extends EventEmitter {
 		this.baseURL = new URL(baseURL ?? "https://api.chiefpay.org");
 
 		this.socket = io(this.baseURL.toString(), {
-			path: "/v1/socket.io",
+			path: "/socket.io",
 			extraHeaders: {
 				"x-api-key": this.apiKey,
 			},
+			autoConnect: false,
 		});
 
 		this.socket.on("connect", () => this.emit("connected"));
@@ -136,9 +137,16 @@ export class ChiefPayClient extends EventEmitter {
 	}
 
 	/**
+	 * Connect to socket.io
+	 */
+	connect() {
+		this.socket.connect();
+	}
+
+	/**
 	 * Stop socket.io connection (graceful shutdown)
 	 */
-	stop() {
+	disconnect() {
 		this.socket.disconnect();
 	}
 
@@ -209,10 +217,10 @@ export class ChiefPayClient extends EventEmitter {
 	/**
 	 * Notifications history
 	 */
-	async history(fromDate: Date, toDate?: Date): Promise<Notification[]> {
+	async history(period: { fromDate: Date, toDate?: Date }): Promise<Notification[]> {
 		const url = new URL("v1/history/", this.baseURL);
-		url.searchParams.set("fromDate", fromDate.toISOString());
-		if (toDate) url.searchParams.set("toDate", toDate.toISOString());
+		url.searchParams.set("fromDate", period.fromDate.toISOString());
+		if (period.toDate) url.searchParams.set("toDate", period.toDate.toISOString());
 		const data = await this.makeRequest<Notification[]>(url);
 
 		return data;
@@ -233,7 +241,22 @@ export class ChiefPayClient extends EventEmitter {
 		}
 
 		const res = await fetch(url, init);
-		const json = await res.json() as Response<T>;
+
+		if (res.status == 429) {
+			const retry = res.headers.get("retry-after-ms") ?? "3000";
+
+			await new Promise(x => setTimeout(x, +retry));
+
+			return this.makeRequest(url, body);
+		}
+
+		const bodyRes = await res.text();
+		let json: Response<T>;
+		try {
+			json = JSON.parse(bodyRes);
+		} catch (e) {
+			throw bodyRes;
+		}
 
 		if (json.status == "error") throw new Error(json.message);
 		return json.data;

@@ -101,9 +101,13 @@ export declare class ChiefPayClient extends EventEmitter {
     rates: Rates;
     constructor({ apiKey, baseURL }: ChiefPayClientSettings);
     /**
+     * Connect to socket.io
+     */
+    connect(): void;
+    /**
      * Stop socket.io connection (graceful shutdown)
      */
-    stop(): void;
+    disconnect(): void;
     private onNotification;
     private handleRates;
     /**

@@ -19,6 +19,7 @@ class ChiefPayClient extends events_1.EventEmitter {
             extraHeaders: {
                 "x-api-key": this.apiKey,
             },
+            autoConnect: false,
         });
         this.socket.on("connect", () => this.emit("connected"));
         this.socket.on("rates", this.handleRates.bind(this));
@@ -26,9 +27,15 @@ class ChiefPayClient extends events_1.EventEmitter {
         this.socket.on("connect_error", err => this.emit("error", err));
     }
     /**
+     * Connect to socket.io
+     */
+    connect() {
+        this.socket.connect();
+    }
+    /**
      * Stop socket.io connection (graceful shutdown)
      */
-    stop() {
+    disconnect() {
         this.socket.disconnect();
     }
     onNotification(notification) {
