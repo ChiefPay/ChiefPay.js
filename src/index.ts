@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { Invoice, Notification, StaticWallet, Response, ServerToClientEvents, Rates, ClientToServerEvents } from "./types";
+import { Invoice, Notification, StaticWallet, Response, ServerToClientEvents, Rates, ClientToServerEvents, InvoiceHistory, TransactionsHistory } from "./types";
 export { InvoiceStatus, StaticWallet, Invoice, Notification, InvoiceNotification, TransactionNotification, Transaction, Rates } from "./types";
 import { io, Socket } from "socket.io-client";
 
@@ -215,13 +215,25 @@ export class ChiefPayClient extends EventEmitter {
 	}
 
 	/**
-	 * Notifications history
+	 * Invoice history
 	 */
-	async history(period: { fromDate: Date, toDate?: Date }): Promise<Notification[]> {
-		const url = new URL("v1/history/", this.baseURL);
-		url.searchParams.set("fromDate", period.fromDate.toISOString());
-		if (period.toDate) url.searchParams.set("toDate", period.toDate.toISOString());
-		const data = await this.makeRequest<Notification[]>(url);
+	async invoiceHistory(req: { fromDate: Date, toDate?: Date, limit?: number }): Promise<InvoiceHistory> {
+		const url = new URL("v1/history/invoices", this.baseURL);
+		url.searchParams.set("fromDate", req.fromDate.toISOString());
+		if (req.toDate) url.searchParams.set("toDate", req.toDate.toISOString());
+		const data = await this.makeRequest<InvoiceHistory>(url);
+
+		return data;
+	}
+
+	/**
+	 * Transactions history
+	 */
+	async transactionsHistory(req: { fromDate: Date, toDate?: Date, limit?: number }): Promise<TransactionsHistory> {
+		const url = new URL("v1/history/transactions", this.baseURL);
+		url.searchParams.set("fromDate", req.fromDate.toISOString());
+		if (req.toDate) url.searchParams.set("toDate", req.toDate.toISOString());
+		const data = await this.makeRequest<TransactionsHistory>(url);
 
 		return data;
 	}

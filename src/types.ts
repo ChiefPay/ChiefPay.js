@@ -73,6 +73,16 @@ export interface StaticWallet {
 	addresses: ChainToken[];
 }
 
+export interface InvoiceHistory {
+	invoices: Invoice[];
+	totalCount: number;
+}
+
+export interface TransactionsHistory {
+	transactions: Transaction[];
+	totalCount: number;
+}
+
 export type TransactionNotification = { type: "transaction", transaction: Transaction };
 export type InvoiceNotification = { type: "invoice", invoice: Invoice };
 
