@@ -15,7 +15,7 @@ class ChiefPayClient extends events_1.EventEmitter {
         this.apiKey = apiKey;
         this.baseURL = new URL(baseURL ?? "https://api.chiefpay.org");
         this.socket = (0, socket_io_client_1.io)(this.baseURL.toString(), {
-            path: "/v1/socket.io",
+            path: "/socket.io",
             extraHeaders: {
                 "x-api-key": this.apiKey,
             },
@@ -92,13 +92,24 @@ class ChiefPayClient extends events_1.EventEmitter {
         return data;
     }
     /**
-     * Notifications history
+     * Invoice history
      */
-    async history(fromDate, toDate) {
-        const url = new URL("v1/history/", this.baseURL);
-        url.searchParams.set("fromDate", fromDate.toISOString());
-        if (toDate)
-            url.searchParams.set("toDate", toDate.toISOString());
+    async invoiceHistory(req) {
+        const url = new URL("v1/history/invoices", this.baseURL);
+        url.searchParams.set("fromDate", req.fromDate.toISOString());
+        if (req.toDate)
+            url.searchParams.set("toDate", req.toDate.toISOString());
+        const data = await this.makeRequest(url);
+        return data;
+    }
+    /**
+     * Transactions history
+     */
+    async transactionsHistory(req) {
+        const url = new URL("v1/history/transactions", this.baseURL);
+        url.searchParams.set("fromDate", req.fromDate.toISOString());
+        if (req.toDate)
+            url.searchParams.set("toDate", req.toDate.toISOString());
         const data = await this.makeRequest(url);
         return data;
     }
@@ -115,7 +126,19 @@ class ChiefPayClient extends events_1.EventEmitter {
             init.body = JSON.stringify(body);
         }
         const res = await fetch(url, init);
-        const json = await res.json();
+        if (res.status == 429) {
+            const retry = res.headers.get("retry-after-ms") ?? "3000";
+            await new Promise(x => setTimeout(x, +retry));
+            return this.makeRequest(url, body);
+        }
+        const bodyRes = await res.text();
+        let json;
+        try {
+            json = JSON.parse(bodyRes);
+        }
+        catch (e) {
+            throw bodyRes;
+        }
         if (json.status == "error")
             throw new Error(json.message);
         return json.data;

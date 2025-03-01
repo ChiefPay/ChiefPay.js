@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { Invoice, Notification, StaticWallet, Rates } from "./types";
+import { Invoice, Notification, StaticWallet, Rates, InvoiceHistory, TransactionsHistory } from "./types";
 export { InvoiceStatus, StaticWallet, Invoice, Notification, InvoiceNotification, TransactionNotification, Transaction, Rates } from "./types";
 interface ChiefPayClientSettings {
     apiKey: string;
@@ -132,8 +132,20 @@ export declare class ChiefPayClient extends EventEmitter {
      */
     getInvoice(invoice: GetInvoice): Promise<Invoice>;
     /**
-     * Notifications history
+     * Invoice history
      */
-    history(fromDate: Date, toDate?: Date): Promise<Notification[]>;
+    invoiceHistory(req: {
+        fromDate: Date;
+        toDate?: Date;
+        limit?: number;
+    }): Promise<InvoiceHistory>;
+    /**
+     * Transactions history
+     */
+    transactionsHistory(req: {
+        fromDate: Date;
+        toDate?: Date;
+        limit?: number;
+    }): Promise<TransactionsHistory>;
     private makeRequest;
 }

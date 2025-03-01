@@ -11,6 +11,13 @@ export type Response<T> = SuccessResponse<T> | ErrorResponse;
 interface ChainToken {
     chain: string;
     token: string;
+    methodName: string;
+    address: string;
+}
+interface ChainTokenWithRate {
+    chain: string;
+    token: string;
+    methodName: string;
     address: string;
     tokenRate: string;
 }
@@ -38,21 +45,30 @@ export interface Invoice {
     id: string;
     orderId: string;
     description?: string;
-    status: InvoiceStatus;
     amount?: string;
     payedAmount: string;
+    feeIncluded: boolean;
     accuracy: string;
     discount: string;
-    feeIncluded: boolean;
+    feeRate: string;
     createdAt: string;
     expiredAt: string;
-    addresses: ChainToken[];
-    FiatDetails: FiatDetails[];
+    status: InvoiceStatus;
+    addresses: ChainTokenWithRate[];
+    FiatDetails?: FiatDetails[];
 }
 export interface StaticWallet {
     id: string;
     orderId: string;
     addresses: ChainToken[];
+}
+export interface InvoiceHistory {
+    invoices: Invoice[];
+    totalCount: number;
+}
+export interface TransactionsHistory {
+    transactions: Transaction[];
+    totalCount: number;
 }
 export type TransactionNotification = {
     type: "transaction";
