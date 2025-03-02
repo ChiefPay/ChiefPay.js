@@ -12,14 +12,14 @@ export interface ErrorResponse {
 
 export type Response<T> = SuccessResponse<T> | ErrorResponse;
 
-interface ChainToken {
+export interface ChainToken {
 	chain: string;
 	token: string;
 	methodName: string;
 	address: string;
 }
 
-interface ChainTokenWithRate {
+export interface ChainTokenWithRate {
 	chain: string;
 	token: string;
 	methodName: string;
@@ -27,7 +27,7 @@ interface ChainTokenWithRate {
 	tokenRate: string;
 }
 
-interface FiatDetails {
+export interface FiatDetails {
 	name: string;
 	amount: string;
 	payedAmount: string;
