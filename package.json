@@ -11,7 +11,7 @@
   "scripts": {
     "build": "tsc"
   },
-  "keywords": [],
+  "keywords": ["chiefpay", "api", "cryptocurrency", "payment", "payment gateway", "bitcoin", "tron", "bsc", "usdt"],
   "author": "ChiefPay <dev@chiefpay.org>",
   "license": "MIT",
   "homepage": "https://chiefpay.org",
