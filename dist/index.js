@@ -1,12 +1,15 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChiefPayClient = void 0;
-const events_1 = require("events");
+exports.ChiefPayClient = exports.isInvoiceNotification = void 0;
 const socket_io_client_1 = require("socket.io-client");
-const MIN_RATE_UPDATE_INTERVAL = 10000;
-class ChiefPayClient extends events_1.EventEmitter {
+const emittery_1 = __importDefault(require("emittery"));
+var utils_1 = require("./utils");
+Object.defineProperty(exports, "isInvoiceNotification", { enumerable: true, get: function () { return utils_1.isInvoiceNotification; } });
+class ChiefPayClient extends emittery_1.default {
     apiKey;
-    lastRatesUpdate = 0;
     socket;
     baseURL;
     rates = [];
@@ -46,13 +49,9 @@ class ChiefPayClient extends events_1.EventEmitter {
         this.emit("rates", this.rates);
     }
     /**
-     * Get rates
-     * @deprecated Use .on("rates") or .rates instead
+     * Better use socket to get token rate. First connect to socket with .connect() then .on("rates") or .rates
      */
     async updateRates() {
-        if (Date.now() - this.lastRatesUpdate < MIN_RATE_UPDATE_INTERVAL)
-            throw new Error("ChiefPayClient: rateUpdateInterval is too short");
-        this.lastRatesUpdate = Date.now();
         const data = await this.makeRequest(new URL("v1/rates/", this.baseURL));
         this.handleRates(data);
         return this.rates;

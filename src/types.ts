@@ -49,6 +49,11 @@ export interface Transaction {
 	wallet: StaticWallet;
 }
 
+export interface LastTransaction {
+	chain: string;
+	txid: string;
+}
+
 export interface Invoice {
 	id: string;
 	orderId: string;
@@ -62,6 +67,8 @@ export interface Invoice {
 	createdAt: string;
 	expiredAt: string;
 	status: InvoiceStatus;
+	url: string;
+	lastTransaction?: LastTransaction;
 
 	addresses: ChainTokenWithRate[];
 	FiatDetails?: FiatDetails[];
@@ -95,5 +102,5 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-	
+
 }

@@ -8,20 +8,20 @@ export interface ErrorResponse {
     message: string;
 }
 export type Response<T> = SuccessResponse<T> | ErrorResponse;
-interface ChainToken {
+export interface ChainToken {
     chain: string;
     token: string;
     methodName: string;
     address: string;
 }
-interface ChainTokenWithRate {
+export interface ChainTokenWithRate {
     chain: string;
     token: string;
     methodName: string;
     address: string;
     tokenRate: string;
 }
-interface FiatDetails {
+export interface FiatDetails {
     name: string;
     amount: string;
     payedAmount: string;
@@ -41,6 +41,10 @@ export interface Transaction {
     blockCreatedAt: string;
     wallet: StaticWallet;
 }
+export interface LastTransaction {
+    chain: string;
+    txid: string;
+}
 export interface Invoice {
     id: string;
     orderId: string;
@@ -54,6 +58,8 @@ export interface Invoice {
     createdAt: string;
     expiredAt: string;
     status: InvoiceStatus;
+    url: string;
+    lastTransaction?: LastTransaction;
     addresses: ChainTokenWithRate[];
     FiatDetails?: FiatDetails[];
 }
@@ -89,4 +95,3 @@ export interface ServerToClientEvents {
 }
 export interface ClientToServerEvents {
 }
-export {};
