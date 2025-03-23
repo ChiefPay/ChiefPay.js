@@ -44,6 +44,8 @@ client.on("notification", notification => {
 		accuracy: "0.01", //Consider the payment successful if at least 99% of the amount has been paid (In this case 14.95$)
 		description: "Description that the payer will see on the payment page",
 		feeIncluded: false, //true to pass the commission on to the payer.
+		urlReturn: "https://example.com/fail", //Redirect link in case of successful payment.
+		urlSuccess: "https://example.com/success", //Redirect link in case of payment cancellation.
 	});
 
 	const invoice1 = await client.getInvoice({
