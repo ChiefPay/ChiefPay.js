@@ -59,6 +59,14 @@ export interface CreateInvoice {
      * @default 0
      */
     discount?: string;
+    /**
+     * URL where to redirect the user in case of payment cancellation.
+     */
+    urlReturn?: string;
+    /**
+     * URL where to redirect the user in case of successful payment.
+     */
+    urlSuccess?: string;
 }
 export interface GetInvoiceById {
     /**

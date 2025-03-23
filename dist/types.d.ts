@@ -60,6 +60,8 @@ export interface Invoice {
     status: InvoiceStatus;
     url: string;
     lastTransaction?: LastTransaction;
+    urlSuccess?: string;
+    urlReturn?: string;
     addresses: ChainTokenWithRate[];
     FiatDetails?: FiatDetails[];
 }
