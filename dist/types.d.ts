@@ -67,6 +67,9 @@ export interface Invoice {
     lastTransaction?: LastTransaction;
     urlSuccess?: string;
     urlReturn?: string;
+    originalExpiredAt?: string;
+    canceledAt?: string;
+    supportLink?: string;
     addresses: ChainTokenWithRate[];
     FiatDetails?: FiatDetails[];
 }
