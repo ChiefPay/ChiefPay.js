@@ -3,11 +3,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChiefPayClient = exports.isInvoiceNotification = void 0;
+exports.ChiefPayClient = exports.ChiefPayError = exports.isInvoiceNotification = void 0;
 const socket_io_client_1 = require("socket.io-client");
 const emittery_1 = __importDefault(require("emittery"));
 var utils_1 = require("./utils");
 Object.defineProperty(exports, "isInvoiceNotification", { enumerable: true, get: function () { return utils_1.isInvoiceNotification; } });
+class ChiefPayError extends Error {
+    code;
+    fields;
+    constructor(message, code, fields) {
+        super(message);
+        this.code = code;
+        this.fields = fields;
+    }
+}
+exports.ChiefPayError = ChiefPayError;
 class ChiefPayClient extends emittery_1.default {
     apiKey;
     socket;
@@ -136,10 +146,11 @@ class ChiefPayClient extends emittery_1.default {
             json = JSON.parse(bodyRes);
         }
         catch (e) {
-            throw bodyRes;
+            throw new Error(bodyRes);
         }
-        if (json.status == "error")
-            throw new Error(json.message);
+        if (json.status == "error") {
+            throw new ChiefPayError(json.message.message, json.message.code, json.message.fields);
+        }
         return json.data;
     }
 }

@@ -1,10 +1,22 @@
-import { Invoice, Notification, StaticWallet, Response, ServerToClientEvents, Rates, ClientToServerEvents, InvoiceHistory, TransactionsHistory } from "./types";
+import { Invoice, Notification, StaticWallet, Response, ServerToClientEvents, Rates, ClientToServerEvents, InvoiceHistory, TransactionsHistory, ErrorCode } from "./types";
 import { io, Socket } from "socket.io-client";
 import Emittery from "emittery";
 import type { ChiefPayClientSettings, CreateInvoice, CreateWallet, Events, GetInvoice, GetWallet } from "./internalTypes";
 
 export type { InvoiceStatus, StaticWallet, Invoice, Notification, InvoiceNotification, TransactionNotification, Transaction, Rates } from "./types";
 export { isInvoiceNotification } from "./utils";
+
+export class ChiefPayError extends Error {
+	public code: ErrorCode;
+	public fields: string[];
+
+	constructor(message: string, code: ErrorCode, fields: string[]) {
+		super(message);
+
+		this.code = code;
+		this.fields = fields;
+	}
+}
 
 export class ChiefPayClient extends Emittery<Events> {
 	readonly apiKey: string;
@@ -129,7 +141,7 @@ export class ChiefPayClient extends Emittery<Events> {
 		return data;
 	}
 
-	private async makeRequest<T>(url: URL, body?: any): Promise<T> {
+	protected async makeRequest<T>(url: URL, body?: any): Promise<T> {
 		const init: RequestInit = {
 			method: "GET",
 			headers: {
@@ -158,10 +170,12 @@ export class ChiefPayClient extends Emittery<Events> {
 		try {
 			json = JSON.parse(bodyRes);
 		} catch (e) {
-			throw bodyRes;
+			throw new Error(bodyRes);
 		}
 
-		if (json.status == "error") throw new Error(json.message);
+		if (json.status == "error") {
+			throw new ChiefPayError(json.message.message, json.message.code, json.message.fields);
+		}
 		return json.data;
 	}
 }

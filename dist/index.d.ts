@@ -1,8 +1,13 @@
-import { Invoice, StaticWallet, Rates, InvoiceHistory, TransactionsHistory } from "./types";
+import { Invoice, StaticWallet, Rates, InvoiceHistory, TransactionsHistory, ErrorCode } from "./types";
 import Emittery from "emittery";
 import type { ChiefPayClientSettings, CreateInvoice, CreateWallet, Events, GetInvoice, GetWallet } from "./internalTypes";
 export type { InvoiceStatus, StaticWallet, Invoice, Notification, InvoiceNotification, TransactionNotification, Transaction, Rates } from "./types";
 export { isInvoiceNotification } from "./utils";
+export declare class ChiefPayError extends Error {
+    code: ErrorCode;
+    fields: string[];
+    constructor(message: string, code: ErrorCode, fields: string[]);
+}
 export declare class ChiefPayClient extends Emittery<Events> {
     readonly apiKey: string;
     private socket;
@@ -55,5 +60,5 @@ export declare class ChiefPayClient extends Emittery<Events> {
         toDate?: Date;
         limit?: number;
     }): Promise<TransactionsHistory>;
-    private makeRequest;
+    protected makeRequest<T>(url: URL, body?: any): Promise<T>;
 }

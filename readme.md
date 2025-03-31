@@ -11,7 +11,7 @@ npm install chiefpay
 ## Usage
 
 ```typescript
-import { ChiefPayClient, isInvoiceNotification } from "chiefpay";
+import { ChiefPayClient, isInvoiceNotification, ChiefPayError } from "chiefpay";
 
 const client = new ChiefPayClient({
 	apiKey: "5456ae39-a9b3-4607-8ed9-8cc4fc67e918",
@@ -36,17 +36,43 @@ client.on("notification", notification => {
 });
 
 (async () => {
-	const invoice = await client.createInvoice({
-		orderId: "564cca2e-30d5-4c69-90d5-fa3f368aea90", //Order ID in your system
-		amount: "15.4", //If the amount is not specified, the payer can choose the amount himself, which is convenient for replenishing the balance.
-		currency: "RUB", //Currently supported only USD and RUB (default USD)
-		discount: "0.02", //2% discount, the amount becomes 15.10$
-		accuracy: "0.01", //Consider the payment successful if at least 99% of the amount has been paid (In this case 14.95$)
-		description: "Description that the payer will see on the payment page",
-		feeIncluded: false, //true to pass the commission on to the payer.
-		urlReturn: "https://example.com/fail", //Redirect link in case of successful payment.
-		urlSuccess: "https://example.com/success", //Redirect link in case of payment cancellation.
-	});
+	let invoice;
+	try {
+		invoice = await client.createInvoice({
+			orderId: "564cca2e-30d5-4c69-90d5-fa3f368aea90", //Order ID in your system
+			amount: "15.4", //If the amount is not specified, the payer can choose the amount himself, which is convenient for replenishing the balance.
+			currency: "RUB", //Currently supported only USD and RUB (default USD).
+			discount: "0.02", //2% discount, the amount becomes 15.10$.
+			accuracy: "0.01", //The payment is considered COMPLETE if between 99% and 101% of the amount has been paid, in this case 14.95$ - 15.26$.
+			description: "Description that the payer will see on the payment page",
+			feeIncluded: false, //true to pass the commission on to the payer.
+			urlReturn: "https://example.com/fail", //Redirect link in case of successful payment.
+			urlSuccess: "https://example.com/success", //Redirect link in case of payment cancellation.
+		});
+	} catch (e) {
+		if (e instanceof ChiefPayError) {
+			switch (e.code) {
+				case "INVALID_ARGUMENT":
+					for (const field of e.fields) {
+						console.error("invalid", field);
+					}
+					break;
+				case "OUT_OF_RANGE":
+					for (const field of e.fields) {
+						console.error("Not in the range", field); //e.g. discount or accuracy
+					}
+					break;
+				case "UNAUTHENTICATED": console.error("You forgot to specify the apiKey"); break;
+				case "PERMISSION_DENIED": console.error("Wrong apiKey"); break;
+				case "ALREADY_EXISTS": console.error("existing orderId"); break;
+				case "NOT_FOUND": console.error(e.message); break;
+				case "INTERNAL": console.error("internal error"); break;
+			}
+		} else {
+			console.error(e); //Not ChiefPay error, e.g. network error
+		}
+		return;
+	}
 
 	const invoice1 = await client.getInvoice({
 		id: invoice.id,

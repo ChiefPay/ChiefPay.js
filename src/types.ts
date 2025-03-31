@@ -5,9 +5,15 @@ export interface SuccessResponse<T> {
 	data: T;
 }
 
+export type ErrorCode = "INVALID_ARGUMENT" | "ALREADY_EXISTS" | "NOT_FOUND" | "INTERNAL" | "OUT_OF_RANGE" | "UNAUTHENTICATED" | "PERMISSION_DENIED";
+
 export interface ErrorResponse {
 	status: "error";
-	message: string;
+	message: {
+		code: ErrorCode;
+		message: string;
+		fields: string[];
+	};
 }
 
 export type Response<T> = SuccessResponse<T> | ErrorResponse;
