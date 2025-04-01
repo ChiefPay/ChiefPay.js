@@ -100,7 +100,7 @@ export type Rates = {
     rate: string;
 }[];
 export interface ServerToClientEvents {
-    notification: (notification: Notification) => void;
+    notification: (notification: Notification, callback: () => void) => void;
     rates: (rates: Rates) => void;
 }
 export interface ClientToServerEvents {

@@ -11,7 +11,7 @@ npm install chiefpay
 ## Usage
 
 ```typescript
-import { ChiefPayClient, isInvoiceNotification, ChiefPayError } from "chiefpay";
+import { ChiefPayClient, isInvoiceNotification, ChiefPayError, Invoice } from "chiefpay";
 
 const client = new ChiefPayClient({
 	apiKey: "5456ae39-a9b3-4607-8ed9-8cc4fc67e918",
@@ -26,10 +26,15 @@ client.on("connected", () => console.log("connected"));
 //rates like [{"name": "BNB", "rate": "624.48"}]
 client.on("rates", rates => console.log("rates event", rates));
 
+async function handleInvoice(invoice: Invoice){
+	throw new Error("Some error");
+}
+
 //There are 2 types of notification: invoice and transaction. You can use isInvoiceNotification or isTransactionNotification or just check notification.type
-client.on("notification", notification => {
+client.on("notification", async notification => {
 	if (isInvoiceNotification(notification)) {
 		console.log("new invoice notification", notification.invoice);
+		await handleInvoice(notification.invoice); //If an error occurs, the notification will not be marked as processed, and the server will send it again the next time it connects to the socket.
 	} else {
 		console.log("new transaction notification", notification.transaction);
 	}

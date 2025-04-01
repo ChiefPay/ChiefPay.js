@@ -57,8 +57,8 @@ export class ChiefPayClient extends Emittery<Events> {
 		this.socket.disconnect();
 	}
 
-	private onNotification(notification: Notification) {
-		this.emit("notification", notification);
+	private onNotification(notification: Notification, cb: () => void) {
+		this.emit("notification", notification).then(cb);
 	}
 
 	private async handleRates(rates: Rates) {

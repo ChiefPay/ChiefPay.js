@@ -108,7 +108,7 @@ export type Notification = TransactionNotification | InvoiceNotification;
 export type Rates = { name: string, rate: string }[];
 
 export interface ServerToClientEvents {
-	notification: (notification: Notification) => void;
+	notification: (notification: Notification, callback: () => void) => void;
 	rates: (rates: Rates) => void;
 }
 
