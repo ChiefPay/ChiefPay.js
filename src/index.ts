@@ -58,7 +58,7 @@ export class ChiefPayClient extends Emittery<Events> {
 	}
 
 	private onNotification(notification: Notification, cb: () => void) {
-		this.emit("notification", notification).then(cb);
+		this.emit("notification", notification).then(cb, () => { });
 	}
 
 	private async handleRates(rates: Rates) {
