@@ -70,7 +70,7 @@ class ChiefPayClient extends emittery_1.default {
      * Create new static wallet
      */
     async createWallet(wallet) {
-        const data = await this.makeRequest(new URL("v1/wallet/", this.baseURL), wallet);
+        const data = await this.makeRequest(new URL("v1/wallet/", this.baseURL), "POST", wallet);
         return data;
     }
     /**
@@ -87,7 +87,7 @@ class ChiefPayClient extends emittery_1.default {
      * Create new invoice
      */
     async createInvoice(invoice) {
-        const data = await this.makeRequest(new URL("v1/invoice/", this.baseURL), invoice);
+        const data = await this.makeRequest(new URL("v1/invoice/", this.baseURL), "POST", invoice);
         return data;
     }
     /**
@@ -98,6 +98,20 @@ class ChiefPayClient extends emittery_1.default {
         for (let key in invoice)
             url.searchParams.set(key, invoice[key]);
         const data = await this.makeRequest(url);
+        return data;
+    }
+    /**
+     * Cancel invoice by id
+     */
+    async cancelInvoice(invoice) {
+        const data = await this.makeRequest(new URL("v1/invoice/", this.baseURL), "DELETE", invoice);
+        return data;
+    }
+    /**
+     * Cancel invoice by id
+     */
+    async prolongateInvoice(invoice) {
+        const data = await this.makeRequest(new URL("v1/invoice/", this.baseURL), "PATCH", invoice);
         return data;
     }
     /**
@@ -122,23 +136,23 @@ class ChiefPayClient extends emittery_1.default {
         const data = await this.makeRequest(url);
         return data;
     }
-    async makeRequest(url, body) {
+    async makeRequest(url, method, body) {
+        method ??= body ? "POST" : "GET";
         const init = {
-            method: "GET",
+            method: method,
             headers: {
                 "x-api-key": this.apiKey,
                 'Content-Type': 'application/json'
             }
         };
         if (body) {
-            init.method = "POST";
             init.body = JSON.stringify(body);
         }
         const res = await fetch(url, init);
         if (res.status == 429) {
             const retry = res.headers.get("retry-after-ms") ?? "3000";
             await new Promise(x => setTimeout(x, +retry));
-            return this.makeRequest(url, body);
+            return this.makeRequest(url, method, body);
         }
         const bodyRes = await res.text();
         let json;

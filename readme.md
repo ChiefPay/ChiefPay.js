@@ -84,6 +84,17 @@ client.on("notification", async notification => {
 		//or orderId: invoice.orderId
 	});
 
+	//prolongateInvoice can be called once, further calls will return the ALREADY_EXISTS error.
+	const invoice2 = await client.prolongateInvoice({
+		id: invoice.id,
+		//or orderId: invoice.orderId
+	});
+
+	const invoice3 = await client.cancelInvoice({
+		id: invoice.id,
+		//or orderId: invoice.orderId
+	});
+
 	const wallet = await client.createWallet({
 		orderId: "a7cbbd57-27c6-46dc-883a-e1d7168d2276", //Order ID in your system
 	});

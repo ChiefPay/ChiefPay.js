@@ -80,7 +80,7 @@ export class ChiefPayClient extends Emittery<Events> {
 	 * Create new static wallet
 	 */
 	async createWallet(wallet: CreateWallet): Promise<StaticWallet> {
-		const data = await this.makeRequest<StaticWallet>(new URL("v1/wallet/", this.baseURL), wallet);
+		const data = await this.makeRequest<StaticWallet>(new URL("v1/wallet/", this.baseURL), "POST", wallet);
 
 		return data;
 	}
@@ -101,7 +101,7 @@ export class ChiefPayClient extends Emittery<Events> {
 	 * Create new invoice
 	 */
 	async createInvoice(invoice: CreateInvoice): Promise<Invoice> {
-		const data = await this.makeRequest<Invoice>(new URL("v1/invoice/", this.baseURL), invoice);
+		const data = await this.makeRequest<Invoice>(new URL("v1/invoice/", this.baseURL), "POST", invoice);
 
 		return data;
 	}
@@ -113,6 +113,24 @@ export class ChiefPayClient extends Emittery<Events> {
 		const url = new URL("v1/invoice/", this.baseURL);
 		for (let key in invoice) url.searchParams.set(key, (invoice as any)[key]);
 		const data = await this.makeRequest<Invoice>(url);
+
+		return data;
+	}
+
+	/**
+	 * Cancel invoice by id
+	 */
+	async cancelInvoice(invoice: GetInvoice): Promise<Invoice> {
+		const data = await this.makeRequest<Invoice>(new URL("v1/invoice/", this.baseURL), "DELETE", invoice);
+
+		return data;
+	}
+
+	/**
+	 * Cancel invoice by id
+	 */
+	async prolongateInvoice(invoice: GetInvoice): Promise<Invoice> {
+		const data = await this.makeRequest<Invoice>(new URL("v1/invoice/", this.baseURL), "PATCH", invoice);
 
 		return data;
 	}
@@ -141,9 +159,10 @@ export class ChiefPayClient extends Emittery<Events> {
 		return data;
 	}
 
-	protected async makeRequest<T>(url: URL, body?: any): Promise<T> {
+	protected async makeRequest<T>(url: URL, method?: string, body?: any): Promise<T> {
+		method ??= body ? "POST" : "GET";
 		const init: RequestInit = {
-			method: "GET",
+			method: method,
 			headers: {
 				"x-api-key": this.apiKey,
 				'Content-Type': 'application/json'
@@ -151,7 +170,6 @@ export class ChiefPayClient extends Emittery<Events> {
 		}
 
 		if (body) {
-			init.method = "POST";
 			init.body = JSON.stringify(body);
 		}
 
@@ -162,7 +180,7 @@ export class ChiefPayClient extends Emittery<Events> {
 
 			await new Promise(x => setTimeout(x, +retry));
 
-			return this.makeRequest(url, body);
+			return this.makeRequest(url, method, body);
 		}
 
 		const bodyRes = await res.text();

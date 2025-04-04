@@ -45,6 +45,14 @@ export declare class ChiefPayClient extends Emittery<Events> {
      */
     getInvoice(invoice: GetInvoice): Promise<Invoice>;
     /**
+     * Cancel invoice by id
+     */
+    cancelInvoice(invoice: GetInvoice): Promise<Invoice>;
+    /**
+     * Cancel invoice by id
+     */
+    prolongateInvoice(invoice: GetInvoice): Promise<Invoice>;
+    /**
      * Invoice history
      */
     invoiceHistory(req: {
@@ -60,5 +68,5 @@ export declare class ChiefPayClient extends Emittery<Events> {
         toDate?: Date;
         limit?: number;
     }): Promise<TransactionsHistory>;
-    protected makeRequest<T>(url: URL, body?: any): Promise<T>;
+    protected makeRequest<T>(url: URL, method?: string, body?: any): Promise<T>;
 }
