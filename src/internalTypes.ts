@@ -97,3 +97,7 @@ export interface Events {
 	error: any;
 	rates: Rates;
 }
+
+export interface NotificationACK {
+	status: "success" | "error"
+}

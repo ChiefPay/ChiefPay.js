@@ -1,7 +1,7 @@
 import { Invoice, Notification, StaticWallet, Response, ServerToClientEvents, Rates, ClientToServerEvents, InvoiceHistory, TransactionsHistory, ErrorCode } from "./types";
 import { io, Socket } from "socket.io-client";
 import Emittery from "emittery";
-import type { ChiefPayClientSettings, CreateInvoice, CreateWallet, Events, GetInvoice, GetWallet } from "./internalTypes";
+import type { ChiefPayClientSettings, CreateInvoice, CreateWallet, Events, GetInvoice, GetWallet, NotificationACK } from "./internalTypes";
 
 export type { InvoiceStatus, StaticWallet, Invoice, Notification, InvoiceNotification, TransactionNotification, Transaction, Rates } from "./types";
 export { isInvoiceNotification } from "./utils";
@@ -57,8 +57,11 @@ export class ChiefPayClient extends Emittery<Events> {
 		this.socket.disconnect();
 	}
 
-	private onNotification(notification: Notification, cb: () => void) {
-		this.emit("notification", notification).then(cb, () => { });
+	private onNotification(notification: Notification, ack: (data: NotificationACK) => void) {
+		this.emit("notification", notification).then(
+			() => ack({ status: "success" }),
+			() => ack({ status: "error" })
+		);
 	}
 
 	private async handleRates(rates: Rates) {

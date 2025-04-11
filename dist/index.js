@@ -51,8 +51,8 @@ class ChiefPayClient extends emittery_1.default {
     disconnect() {
         this.socket.disconnect();
     }
-    onNotification(notification, cb) {
-        this.emit("notification", notification).then(cb, () => { });
+    onNotification(notification, ack) {
+        this.emit("notification", notification).then(() => ack({ status: "success" }), () => ack({ status: "error" }));
     }
     async handleRates(rates) {
         this.rates = rates;
