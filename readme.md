@@ -47,7 +47,6 @@ client.on("notification", async notification => {
       orderId: "564cca2e-30d5-4c69-90d5-fa3f368aea90", //Order ID in your system
       amount: "15.4", //If the amount is not specified, the payer can choose the amount himself, which is convenient for replenishing the balance.
       currency: "RUB", //Currently supported only USD and RUB (default USD).
-      discount: "0.02", //2% discount, the amount becomes 15.10$.
       accuracy: "0.01", //The payment is considered COMPLETE if between 99% and 101% of the amount has been paid, in this case 14.95$ - 15.26$.
       description: "Description that the payer will see on the payment page",
       feeIncluded: false, //true to pass the commission on to the payer.
@@ -64,7 +63,7 @@ client.on("notification", async notification => {
           break;
         case "OUT_OF_RANGE":
           for (const field of e.fields) {
-            console.error("Not in the range", field); //e.g. discount or accuracy
+            console.error("Not in the range", field); //e.g. accuracy
           }
           break;
         case "UNAUTHENTICATED": console.error("You forgot to specify the apiKey"); break;

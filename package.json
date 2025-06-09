@@ -1,6 +1,6 @@
 {
   "name": "chiefpay",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,7 +22,7 @@
     "url": "git+https://github.com/ChiefPay/ChiefPay.js.git"
   },
   "devDependencies": {
-    "@types/node": "^22.13.0",
+    "@types/node": "^22.15.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.8.0"
   },

@@ -55,11 +55,6 @@ export interface CreateInvoice {
      */
     accuracy?: string;
     /**
-     * Discount or markup. From -0.99 to 0.99 where 0.05 is 5% discount and -0.05 is 5% markup.
-     * @default 0
-     */
-    discount?: string;
-    /**
      * URL where to redirect the user in case of payment cancellation.
      */
     urlReturn?: string;

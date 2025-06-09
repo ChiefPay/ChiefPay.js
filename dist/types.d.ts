@@ -58,7 +58,6 @@ export interface Invoice {
     payedAmount: string;
     feeIncluded: boolean;
     accuracy: string;
-    discount: string;
     feeRate: string;
     createdAt: string;
     expiredAt: string;
