@@ -45,6 +45,7 @@ export interface Transaction {
     createdAt: string;
     blockCreatedAt: string;
     wallet: StaticWallet;
+    merchantAmount: string;
 }
 export interface LastTransaction {
     chain: string;
@@ -69,6 +70,7 @@ export interface Invoice {
     originalExpiredAt?: string;
     canceledAt?: string;
     supportLink?: string;
+    merchantAmount: string;
     addresses: ChainTokenWithRate[];
     FiatDetails?: FiatDetails[];
 }
