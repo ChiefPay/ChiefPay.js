@@ -1,12 +1,41 @@
-import { Invoice, StaticWallet, Rates, InvoiceHistory, TransactionsHistory, ErrorCode } from "./types";
 import Emittery from "emittery";
-import type { ChiefPayClientSettings, CreateInvoice, CreateWallet, Events, GetInvoice, GetWallet } from "./internalTypes";
-export type { InvoiceStatus, StaticWallet, Invoice, Notification, InvoiceNotification, TransactionNotification, Transaction, Rates } from "./types";
-export { isInvoiceNotification } from "./utils";
+import { components, operations } from "./types/openapi";
+export type ErrorResponse = components["schemas"]["ErrorResponse"];
+export type Response<T> = T | ErrorResponse;
+export type Rates = components["schemas"]["Rate"][];
+export type StaticWallet = components["schemas"]["StaticWallet"];
+export type Transaction = components["schemas"]["Transaction"];
+export type Invoice = components["schemas"]["Invoice"];
+export type InvoiceHistory = components["schemas"]["Invoices"];
+export type TransactionsHistory = components["schemas"]["Transactions"];
+export interface ChiefPayClientSettings {
+    apiKey: string;
+    /**
+     * url like https://hostname or https://hostname:port
+     * @default https://api.chiefpay.org
+     */
+    baseURL?: string;
+}
+export interface NotificationInvoice {
+    type: "invoice";
+    invoice: Invoice;
+}
+export interface NotificationTransaction {
+    type: "transaction";
+    transaction: Transaction;
+}
+export type Notification = NotificationInvoice | NotificationTransaction;
+interface Events {
+    notification: Notification;
+    connected: undefined;
+    error: any;
+    rates: Rates;
+}
+export declare function isInvoiceNotification(notification: Notification): notification is NotificationInvoice;
+export declare function isTransactionNotification(notification: Notification): notification is NotificationTransaction;
 export declare class ChiefPayError extends Error {
-    code: ErrorCode;
-    fields: string[];
-    constructor(message: string, code: ErrorCode, fields: string[]);
+    code: ErrorResponse["code"];
+    constructor(errors: string[], code: ErrorResponse["code"]);
 }
 export declare class ChiefPayClient extends Emittery<Events> {
     readonly apiKey: string;
@@ -31,42 +60,40 @@ export declare class ChiefPayClient extends Emittery<Events> {
     /**
      * Create new static wallet
      */
-    createWallet(wallet: CreateWallet): Promise<StaticWallet>;
+    createWallet(wallet: components["schemas"]["CreateStaticWalletRequest"]): Promise<StaticWallet>;
     /**
      * Get static wallet info by id
      */
-    getWallet(wallet: GetWallet): Promise<StaticWallet>;
+    getWallet(walletId: string): Promise<StaticWallet>;
     /**
      * Create new invoice
      */
-    createInvoice(invoice: CreateInvoice): Promise<Invoice>;
+    createInvoice(invoice: components["schemas"]["CreateInvoiceRequest"]): Promise<Invoice>;
     /**
      * Get invoice info by id
      */
-    getInvoice(invoice: GetInvoice): Promise<Invoice>;
+    getInvoice(invoiceId: string): Promise<Invoice>;
     /**
      * Cancel invoice by id
      */
-    cancelInvoice(invoice: GetInvoice): Promise<Invoice>;
+    cancelInvoice(invoiceId: string): Promise<Invoice>;
     /**
-     * Cancel invoice by id
+     * Prolong invoice by id
      */
-    prolongateInvoice(invoice: GetInvoice): Promise<Invoice>;
+    prolongInvoice(invoiceId: string): Promise<Invoice>;
+    /**
+     * Patch invoice by id
+     */
+    patchInvoice(invoiceId: string, invoice: components["schemas"]["PatchInvoiceRequest"]): Promise<Invoice>;
     /**
      * Invoice history
      */
-    invoiceHistory(req: {
-        fromDate: Date;
-        toDate?: Date;
-        limit?: number;
-    }): Promise<InvoiceHistory>;
+    invoiceHistory(req: operations["GetInvoices"]["parameters"]["query"]): Promise<InvoiceHistory>;
     /**
      * Transactions history
      */
-    transactionsHistory(req: {
-        fromDate: Date;
-        toDate?: Date;
-        limit?: number;
-    }): Promise<TransactionsHistory>;
-    protected makeRequest<T>(url: URL, method?: string, body?: any): Promise<T>;
+    transactionsHistory(req: operations["GetTransactions"]["parameters"]["query"]): Promise<TransactionsHistory>;
+    private appendSearchParams;
+    protected makeRequest<T>(url: URL, method?: string, body?: any, retries?: number): Promise<T>;
 }
+export {};

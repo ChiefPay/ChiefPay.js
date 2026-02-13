@@ -3,18 +3,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChiefPayClient = exports.ChiefPayError = exports.isInvoiceNotification = void 0;
+exports.ChiefPayClient = exports.ChiefPayError = void 0;
+exports.isInvoiceNotification = isInvoiceNotification;
+exports.isTransactionNotification = isTransactionNotification;
 const socket_io_client_1 = require("socket.io-client");
 const emittery_1 = __importDefault(require("emittery"));
-var utils_1 = require("./utils");
-Object.defineProperty(exports, "isInvoiceNotification", { enumerable: true, get: function () { return utils_1.isInvoiceNotification; } });
+function isErrorResponse(data) {
+    return typeof data === 'object' && 'errors' in data && 'code' in data;
+}
+function isInvoiceNotification(notification) {
+    return notification.type == "invoice";
+}
+function isTransactionNotification(notification) {
+    return notification.type == "transaction";
+}
 class ChiefPayError extends Error {
     code;
-    fields;
-    constructor(message, code, fields) {
-        super(message);
+    constructor(errors, code) {
+        super(errors.join());
         this.code = code;
-        this.fields = fields;
     }
 }
 exports.ChiefPayError = ChiefPayError;
@@ -26,7 +33,10 @@ class ChiefPayClient extends emittery_1.default {
     constructor({ apiKey, baseURL }) {
         super();
         this.apiKey = apiKey;
-        this.baseURL = new URL(baseURL ?? "https://api.chiefpay.org");
+        let urlStr = baseURL ?? "https://api.chiefpay.org";
+        if (!urlStr.endsWith('/'))
+            urlStr += '/';
+        this.baseURL = new URL(urlStr);
         this.socket = (0, socket_io_client_1.io)(this.baseURL.toString(), {
             path: "/socket.io",
             extraHeaders: {
@@ -76,11 +86,8 @@ class ChiefPayClient extends emittery_1.default {
     /**
      * Get static wallet info by id
      */
-    async getWallet(wallet) {
-        const url = new URL("v1/wallet/", this.baseURL);
-        for (let key in wallet)
-            url.searchParams.set(key, wallet[key]);
-        const data = await this.makeRequest(url);
+    async getWallet(walletId) {
+        const data = await this.makeRequest(new URL(`v1/wallet/${walletId}`, this.baseURL));
         return data;
     }
     /**
@@ -93,25 +100,29 @@ class ChiefPayClient extends emittery_1.default {
     /**
      * Get invoice info by id
      */
-    async getInvoice(invoice) {
-        const url = new URL("v1/invoice/", this.baseURL);
-        for (let key in invoice)
-            url.searchParams.set(key, invoice[key]);
-        const data = await this.makeRequest(url);
+    async getInvoice(invoiceId) {
+        const data = await this.makeRequest(new URL(`v1/invoice/${invoiceId}`, this.baseURL));
         return data;
     }
     /**
      * Cancel invoice by id
      */
-    async cancelInvoice(invoice) {
-        const data = await this.makeRequest(new URL("v1/invoice/", this.baseURL), "DELETE", invoice);
+    async cancelInvoice(invoiceId) {
+        const data = await this.makeRequest(new URL(`v1/invoice/${invoiceId}/cancel`, this.baseURL), "POST");
         return data;
     }
     /**
-     * Cancel invoice by id
+     * Prolong invoice by id
      */
-    async prolongateInvoice(invoice) {
-        const data = await this.makeRequest(new URL("v1/invoice/", this.baseURL), "PATCH", invoice);
+    async prolongInvoice(invoiceId) {
+        const data = await this.makeRequest(new URL(`v1/invoice/${invoiceId}/prolong`, this.baseURL), "POST");
+        return data;
+    }
+    /**
+     * Patch invoice by id
+     */
+    async patchInvoice(invoiceId, invoice) {
+        const data = await this.makeRequest(new URL(`v1/invoice/${invoiceId}`, this.baseURL), "PATCH", invoice);
         return data;
     }
     /**
@@ -119,9 +130,7 @@ class ChiefPayClient extends emittery_1.default {
      */
     async invoiceHistory(req) {
         const url = new URL("v1/history/invoices", this.baseURL);
-        url.searchParams.set("fromDate", req.fromDate.toISOString());
-        if (req.toDate)
-            url.searchParams.set("toDate", req.toDate.toISOString());
+        this.appendSearchParams(url, req);
         const data = await this.makeRequest(url);
         return data;
     }
@@ -130,19 +139,26 @@ class ChiefPayClient extends emittery_1.default {
      */
     async transactionsHistory(req) {
         const url = new URL("v1/history/transactions", this.baseURL);
-        url.searchParams.set("fromDate", req.fromDate.toISOString());
-        if (req.toDate)
-            url.searchParams.set("toDate", req.toDate.toISOString());
+        this.appendSearchParams(url, req);
         const data = await this.makeRequest(url);
         return data;
     }
-    async makeRequest(url, method, body) {
+    // Helper method
+    appendSearchParams(url, params) {
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                url.searchParams.set(key, value.toString());
+            }
+        });
+    }
+    async makeRequest(url, method, body, retries = 3) {
         method ??= body ? "POST" : "GET";
         const init = {
             method: method,
             headers: {
                 "x-api-key": this.apiKey,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
             }
         };
         if (body) {
@@ -150,22 +166,28 @@ class ChiefPayClient extends emittery_1.default {
         }
         const res = await fetch(url, init);
         if (res.status == 429) {
+            if (retries <= 0)
+                throw new Error("Rate limit exceeded and max retries reached");
             const retry = res.headers.get("retry-after-ms") ?? "3000";
             await new Promise(x => setTimeout(x, +retry));
-            return this.makeRequest(url, method, body);
+            return this.makeRequest(url, method, body, retries - 1);
         }
         const bodyRes = await res.text();
-        let json;
+        let err;
         try {
-            json = JSON.parse(bodyRes);
+            let json = JSON.parse(bodyRes);
+            if (res.ok)
+                return json;
+            if (isErrorResponse(json)) {
+                err = new ChiefPayError(json.errors, json.code);
+            }
+            else
+                err = new Error(`API Error ${res.status}: ${JSON.stringify(json)}`);
         }
         catch (e) {
-            throw new Error(bodyRes);
+            err = new Error(`Failed to parse response: ${res.status} ${res.statusText}`);
         }
-        if (json.status == "error") {
-            throw new ChiefPayError(json.message.message, json.message.code, json.message.fields);
-        }
-        return json.data;
+        throw err;
     }
 }
 exports.ChiefPayClient = ChiefPayClient;
