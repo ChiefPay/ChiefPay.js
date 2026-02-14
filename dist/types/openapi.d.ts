@@ -210,6 +210,8 @@ export interface components {
             /** @description Wallet addresses for payment */
             addresses: components["schemas"]["ChainTokenStatic"][];
         };
+        /** Format: uuid */
+        UUID: string;
         CreateStaticWalletRequest: {
             /** @description ID in the client's system */
             orderId: string;
@@ -504,7 +506,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                id: components["schemas"]["UUID"];
             };
             cookie?: never;
         };
@@ -617,7 +619,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                id: components["schemas"]["UUID"];
             };
             cookie?: never;
         };
@@ -657,7 +659,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                id: components["schemas"]["UUID"];
             };
             cookie?: never;
         };
@@ -743,7 +745,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                id: components["schemas"]["UUID"];
             };
             cookie?: never;
         };
@@ -783,7 +785,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                id: components["schemas"]["UUID"];
             };
             cookie?: never;
         };
@@ -823,7 +825,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                id: components["schemas"]["UUID"];
             };
             cookie?: never;
         };

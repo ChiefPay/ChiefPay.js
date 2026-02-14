@@ -69,6 +69,9 @@ components:
         - addresses
       type: object
       additionalProperties: false
+    UUID:
+      type: string
+      format: uuid
     CreateStaticWalletRequest:
       properties:
         orderId:
@@ -507,7 +510,7 @@ paths:
           name: id
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/UUID'
   /v1/wallet:
     post:
       operationId: CreateWallet
@@ -613,7 +616,7 @@ paths:
           name: id
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/UUID'
     patch:
       operationId: PatchInvoice
       responses:
@@ -649,7 +652,7 @@ paths:
           name: id
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/UUID'
       requestBody:
         required: true
         content:
@@ -731,7 +734,7 @@ paths:
           name: id
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/UUID'
   /v1/invoice/{id}/prolong:
     post:
       operationId: ProlongInvoice
@@ -768,7 +771,7 @@ paths:
           name: id
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/UUID'
   /v1/invoice/{id}/subscribe:
     get:
       operationId: SubscribeInvoice
@@ -805,7 +808,7 @@ paths:
           name: id
           required: true
           schema:
-            type: string
+            $ref: '#/components/schemas/UUID'
   /v1/history/invoices:
     get:
       operationId: GetInvoices

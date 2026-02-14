@@ -8,6 +8,7 @@ export type Transaction = components["schemas"]["Transaction"];
 export type Invoice = components["schemas"]["Invoice"];
 export type InvoiceHistory = components["schemas"]["Invoices"];
 export type TransactionsHistory = components["schemas"]["Transactions"];
+export type PaymentMethods = components["schemas"]["PaymentMethods"];
 export interface ChiefPayClientSettings {
     apiKey: string;
     /**
@@ -93,6 +94,10 @@ export declare class ChiefPayClient extends Emittery<Events> {
      * Transactions history
      */
     transactionsHistory(req: operations["GetTransactions"]["parameters"]["query"]): Promise<TransactionsHistory>;
+    /**
+     * Payment methods
+     */
+    getPaymentMethods(): Promise<PaymentMethods>;
     private appendSearchParams;
     protected makeRequest<T>(url: URL, method?: string, body?: any, retries?: number): Promise<T>;
 }

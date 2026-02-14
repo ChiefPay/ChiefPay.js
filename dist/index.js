@@ -143,6 +143,14 @@ class ChiefPayClient extends emittery_1.default {
         const data = await this.makeRequest(url);
         return data;
     }
+    /**
+     * Payment methods
+     */
+    async getPaymentMethods() {
+        const url = new URL("v1/paymentMethods", this.baseURL);
+        const data = await this.makeRequest(url);
+        return data;
+    }
     // Helper method
     appendSearchParams(url, params) {
         Object.entries(params).forEach(([key, value]) => {

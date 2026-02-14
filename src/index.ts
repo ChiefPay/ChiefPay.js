@@ -10,6 +10,7 @@ export type Transaction = components["schemas"]["Transaction"];
 export type Invoice = components["schemas"]["Invoice"];
 export type InvoiceHistory = components["schemas"]["Invoices"];
 export type TransactionsHistory = components["schemas"]["Transactions"];
+export type PaymentMethods = components["schemas"]["PaymentMethods"];
 
 function isErrorResponse(data: any): data is ErrorResponse {
 	return typeof data === 'object' && 'errors' in data && 'code' in data;
@@ -219,6 +220,16 @@ export class ChiefPayClient extends Emittery<Events> {
 		const url = new URL("v1/history/transactions", this.baseURL);
 		this.appendSearchParams(url, req);
 		const data = await this.makeRequest<TransactionsHistory>(url);
+
+		return data;
+	}
+
+	/**
+	 * Payment methods
+	 */
+	async getPaymentMethods(): Promise<PaymentMethods> {
+		const url = new URL("v1/paymentMethods", this.baseURL);
+		const data = await this.makeRequest<PaymentMethods>(url);
 
 		return data;
 	}
