@@ -61,17 +61,18 @@ client.on("notification", async (notification) => {
 * **`patchInvoice(invoiceId, request)`**: Used for **specifying or refining** invoice details. It only allows setting fields that were **not** provided during creation (e.g., if you created an invoice without an amount, you can set it here). Attempting to overwrite existing fields will result in an error.
 * **`prolongInvoice(invoiceId)`**: Extends the expiration time of the invoice. This can be called only once; subsequent calls return an `ALREADY_EXISTS` error.
 * **`cancelInvoice(invoiceId)`**: Manually cancels the invoice.
+* **`invoiceHistory(query)`**: Returns a paginated list of invoices. Use `fromDate` and `toDate` for filtering.
 
 ### Static Wallets
 
 * **`createWallet(request)`**: Creates a permanent wallet (static address) linked to your `orderId`. Useful for user balance top-ups.
 * **`getWallet(walletId)`**: Returns the wallet details and the list of generated blockchain addresses.
+* **`transactionsHistory(query)`**: Returns a paginated list of all incoming blockchain transactions.
 
-### History & Rates
+### Rates & Payment methods
 
 * **`updateRates()`**: Force-refreshes the token rates via HTTP.
-* **`invoiceHistory(query)`**: Returns a paginated list of invoices. Use `fromDate` and `toDate` for filtering.
-* **`transactionsHistory(query)`**: Returns a paginated list of all incoming blockchain transactions.
+* **`getPaymentMethods()`**: Get a list of payment methods.
 
 ---
 
