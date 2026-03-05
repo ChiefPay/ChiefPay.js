@@ -229,6 +229,10 @@ export interface components {
             methodName: string;
             /** @description Payment method icon */
             icon: string;
+            /** @description Chain icon */
+            chainIcon: string;
+            /** @description Token icon */
+            tokenIcon: string;
         };
         PaymentMethods: {
             paymentMethods: components["schemas"]["PaymentMethod"][];
@@ -262,8 +266,8 @@ export interface components {
             id: string;
             /** @description ID in the client's system (specified when creating an invoice) */
             orderId: string;
-            /** @description Description shown on the payment page */
-            description?: string;
+            /** @description Merchant's name */
+            merchantName: string;
             /**
              * Format: decimal
              * @description Original order amount in USD (excluding service fee)
@@ -357,8 +361,6 @@ export interface components {
         CreateInvoiceRequest: {
             /** @description ID in the client's system */
             orderId: string;
-            /** @description Description, shown on the payment page */
-            description?: string;
             /**
              * Format: decimal
              * @description Invoice amount in USD. If omitted, any payment amount will result in COMPLETE status

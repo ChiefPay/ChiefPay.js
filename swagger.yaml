@@ -106,11 +106,19 @@ components:
         icon:
           type: string
           description: Payment method icon
+        chainIcon:
+          type: string
+          description: Chain icon
+        tokenIcon:
+          type: string
+          description: Token icon
       required:
         - chain
         - token
         - methodName
         - icon
+        - chainIcon
+        - tokenIcon
       type: object
       additionalProperties: false
     PaymentMethods:
@@ -174,9 +182,9 @@ components:
         orderId:
           type: string
           description: ID in the client's system (specified when creating an invoice)
-        description:
+        merchantName:
           type: string
-          description: Description shown on the payment page
+          description: Merchant's name
         amount:
           type: string
           description: Original order amount in USD (excluding service fee)
@@ -260,6 +268,7 @@ components:
       required:
         - id
         - orderId
+        - merchantName
         - paidAmount
         - feeIncluded
         - accuracy
@@ -290,9 +299,6 @@ components:
         orderId:
           type: string
           description: ID in the client's system
-        description:
-          type: string
-          description: Description, shown on the payment page
         amount:
           type: string
           description: >-
