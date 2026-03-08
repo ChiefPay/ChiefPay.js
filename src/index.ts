@@ -3,7 +3,6 @@ import Emittery from "emittery";
 import { components, operations } from "./types/openapi";
 
 export type ErrorResponse = components["schemas"]["ErrorResponse"];
-export type Response<T> = T | ErrorResponse;
 export type Rates = components["schemas"]["Rate"][];
 export type StaticWallet = components["schemas"]["StaticWallet"];
 export type Transaction = components["schemas"]["Transaction"];
@@ -13,7 +12,7 @@ export type TransactionsHistory = components["schemas"]["Transactions"];
 export type PaymentMethods = components["schemas"]["PaymentMethods"];
 
 function isErrorResponse(data: any): data is ErrorResponse {
-	return typeof data === 'object' && 'errors' in data && 'code' in data;
+	return typeof data === 'object' && data !== null && 'errors' in data && 'code' in data;
 }
 
 export interface ChiefPayClientSettings {

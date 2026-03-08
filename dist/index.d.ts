@@ -1,7 +1,6 @@
 import Emittery from "emittery";
 import { components, operations } from "./types/openapi";
 export type ErrorResponse = components["schemas"]["ErrorResponse"];
-export type Response<T> = T | ErrorResponse;
 export type Rates = components["schemas"]["Rate"][];
 export type StaticWallet = components["schemas"]["StaticWallet"];
 export type Transaction = components["schemas"]["Transaction"];

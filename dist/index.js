@@ -9,7 +9,7 @@ exports.isTransactionNotification = isTransactionNotification;
 const socket_io_client_1 = require("socket.io-client");
 const emittery_1 = __importDefault(require("emittery"));
 function isErrorResponse(data) {
-    return typeof data === 'object' && 'errors' in data && 'code' in data;
+    return typeof data === 'object' && data !== null && 'errors' in data && 'code' in data;
 }
 function isInvoiceNotification(notification) {
     return notification.type == "invoice";
