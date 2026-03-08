@@ -1,20 +1,76 @@
-import { Invoice, Notification, StaticWallet, Response, ServerToClientEvents, Rates, ClientToServerEvents, InvoiceHistory, TransactionsHistory, ErrorCode } from "./types";
 import { io, Socket } from "socket.io-client";
 import Emittery from "emittery";
-import type { ChiefPayClientSettings, CreateInvoice, CreateWallet, Events, GetInvoice, GetWallet, NotificationACK } from "./internalTypes";
+import { components, operations } from "./types/openapi";
 
-export type { InvoiceStatus, StaticWallet, Invoice, Notification, InvoiceNotification, TransactionNotification, Transaction, Rates } from "./types";
-export { isInvoiceNotification } from "./utils";
+export type ErrorResponse = components["schemas"]["ErrorResponse"];
+export type Rates = components["schemas"]["Rate"][];
+export type StaticWallet = components["schemas"]["StaticWallet"];
+export type Transaction = components["schemas"]["Transaction"];
+export type Invoice = components["schemas"]["Invoice"];
+export type InvoiceHistory = components["schemas"]["Invoices"];
+export type TransactionsHistory = components["schemas"]["Transactions"];
+export type PaymentMethods = components["schemas"]["PaymentMethods"];
+
+function isErrorResponse(data: any): data is ErrorResponse {
+	return typeof data === 'object' && data !== null && 'errors' in data && 'code' in data;
+}
+
+export interface ChiefPayClientSettings {
+	apiKey: string;
+	/**
+	 * url like https://hostname or https://hostname:port
+	 * @default https://api.chiefpay.org
+	 */
+	baseURL?: string;
+}
+
+export interface NotificationInvoice {
+	type: "invoice";
+	invoice: Invoice;
+}
+
+export interface NotificationTransaction {
+	type: "transaction";
+	transaction: Transaction;
+}
+
+export type Notification = NotificationInvoice | NotificationTransaction;
+
+interface Events {
+	notification: Notification;
+	connected: undefined;
+	error: any;
+	rates: Rates;
+}
+
+interface NotificationACK {
+	status: "success" | "error"
+}
+
+interface ServerToClientEvents {
+	notification: (notification: Notification, callback: (result: NotificationACK) => void) => void;
+	rates: (rates: Rates) => void;
+}
+
+interface ClientToServerEvents {
+
+}
+
+export function isInvoiceNotification(notification: Notification): notification is NotificationInvoice {
+	return notification.type == "invoice";
+}
+
+export function isTransactionNotification(notification: Notification): notification is NotificationTransaction {
+	return notification.type == "transaction";
+}
 
 export class ChiefPayError extends Error {
-	public code: ErrorCode;
-	public fields: string[];
+	public code: ErrorResponse["code"];
 
-	constructor(message: string, code: ErrorCode, fields: string[]) {
-		super(message);
+	constructor(errors: string[], code: ErrorResponse["code"]) {
+		super(errors.join());
 
 		this.code = code;
-		this.fields = fields;
 	}
 }
 
@@ -27,7 +83,9 @@ export class ChiefPayClient extends Emittery<Events> {
 	constructor({ apiKey, baseURL }: ChiefPayClientSettings) {
 		super();
 		this.apiKey = apiKey;
-		this.baseURL = new URL(baseURL ?? "https://api.chiefpay.org");
+		let urlStr = baseURL ?? "https://api.chiefpay.org";
+		if (!urlStr.endsWith('/')) urlStr += '/';
+		this.baseURL = new URL(urlStr);
 
 		this.socket = io(this.baseURL.toString(), {
 			path: "/socket.io",
@@ -82,7 +140,7 @@ export class ChiefPayClient extends Emittery<Events> {
 	/**
 	 * Create new static wallet
 	 */
-	async createWallet(wallet: CreateWallet): Promise<StaticWallet> {
+	async createWallet(wallet: components["schemas"]["CreateStaticWalletRequest"]): Promise<StaticWallet> {
 		const data = await this.makeRequest<StaticWallet>(new URL("v1/wallet/", this.baseURL), "POST", wallet);
 
 		return data;
@@ -91,10 +149,8 @@ export class ChiefPayClient extends Emittery<Events> {
 	/**
 	 * Get static wallet info by id
 	 */
-	async getWallet(wallet: GetWallet): Promise<StaticWallet> {
-		const url = new URL("v1/wallet/", this.baseURL);
-		for (let key in wallet) url.searchParams.set(key, (wallet as any)[key]);
-		const data = await this.makeRequest<StaticWallet>(url);
+	async getWallet(walletId: string): Promise<StaticWallet> {
+		const data = await this.makeRequest<StaticWallet>(new URL(`v1/wallet/${walletId}`, this.baseURL));
 
 		return data;
 	}
@@ -103,7 +159,7 @@ export class ChiefPayClient extends Emittery<Events> {
 	/**
 	 * Create new invoice
 	 */
-	async createInvoice(invoice: CreateInvoice): Promise<Invoice> {
+	async createInvoice(invoice: components["schemas"]["CreateInvoiceRequest"]): Promise<Invoice> {
 		const data = await this.makeRequest<Invoice>(new URL("v1/invoice/", this.baseURL), "POST", invoice);
 
 		return data;
@@ -112,10 +168,8 @@ export class ChiefPayClient extends Emittery<Events> {
 	/**
 	 * Get invoice info by id
 	 */
-	async getInvoice(invoice: GetInvoice): Promise<Invoice> {
-		const url = new URL("v1/invoice/", this.baseURL);
-		for (let key in invoice) url.searchParams.set(key, (invoice as any)[key]);
-		const data = await this.makeRequest<Invoice>(url);
+	async getInvoice(invoiceId: string): Promise<Invoice> {
+		const data = await this.makeRequest<Invoice>(new URL(`v1/invoice/${invoiceId}`, this.baseURL));
 
 		return data;
 	}
@@ -123,17 +177,26 @@ export class ChiefPayClient extends Emittery<Events> {
 	/**
 	 * Cancel invoice by id
 	 */
-	async cancelInvoice(invoice: GetInvoice): Promise<Invoice> {
-		const data = await this.makeRequest<Invoice>(new URL("v1/invoice/", this.baseURL), "DELETE", invoice);
+	async cancelInvoice(invoiceId: string): Promise<Invoice> {
+		const data = await this.makeRequest<Invoice>(new URL(`v1/invoice/${invoiceId}/cancel`, this.baseURL), "POST");
 
 		return data;
 	}
 
 	/**
-	 * Cancel invoice by id
+	 * Prolong invoice by id
 	 */
-	async prolongateInvoice(invoice: GetInvoice): Promise<Invoice> {
-		const data = await this.makeRequest<Invoice>(new URL("v1/invoice/", this.baseURL), "PATCH", invoice);
+	async prolongInvoice(invoiceId: string): Promise<Invoice> {
+		const data = await this.makeRequest<Invoice>(new URL(`v1/invoice/${invoiceId}/prolong`, this.baseURL), "POST");
+
+		return data;
+	}
+
+	/**
+	 * Patch invoice by id
+	 */
+	async patchInvoice(invoiceId: string, invoice: components["schemas"]["PatchInvoiceRequest"]): Promise<Invoice> {
+		const data = await this.makeRequest<Invoice>(new URL(`v1/invoice/${invoiceId}`, this.baseURL), "PATCH", invoice);
 
 		return data;
 	}
@@ -141,10 +204,9 @@ export class ChiefPayClient extends Emittery<Events> {
 	/**
 	 * Invoice history
 	 */
-	async invoiceHistory(req: { fromDate: Date, toDate?: Date, limit?: number }): Promise<InvoiceHistory> {
+	async invoiceHistory(req: operations["GetInvoices"]["parameters"]["query"]): Promise<InvoiceHistory> {
 		const url = new URL("v1/history/invoices", this.baseURL);
-		url.searchParams.set("fromDate", req.fromDate.toISOString());
-		if (req.toDate) url.searchParams.set("toDate", req.toDate.toISOString());
+		this.appendSearchParams(url, req);
 		const data = await this.makeRequest<InvoiceHistory>(url);
 
 		return data;
@@ -153,22 +215,41 @@ export class ChiefPayClient extends Emittery<Events> {
 	/**
 	 * Transactions history
 	 */
-	async transactionsHistory(req: { fromDate: Date, toDate?: Date, limit?: number }): Promise<TransactionsHistory> {
+	async transactionsHistory(req: operations["GetTransactions"]["parameters"]["query"]): Promise<TransactionsHistory> {
 		const url = new URL("v1/history/transactions", this.baseURL);
-		url.searchParams.set("fromDate", req.fromDate.toISOString());
-		if (req.toDate) url.searchParams.set("toDate", req.toDate.toISOString());
+		this.appendSearchParams(url, req);
 		const data = await this.makeRequest<TransactionsHistory>(url);
 
 		return data;
 	}
 
-	protected async makeRequest<T>(url: URL, method?: string, body?: any): Promise<T> {
+	/**
+	 * Payment methods
+	 */
+	async getPaymentMethods(): Promise<PaymentMethods> {
+		const url = new URL("v1/paymentMethods", this.baseURL);
+		const data = await this.makeRequest<PaymentMethods>(url);
+
+		return data;
+	}
+
+	// Helper method
+	private appendSearchParams(url: URL, params: Record<string, any>) {
+		Object.entries(params).forEach(([key, value]) => {
+			if (value !== undefined && value !== null) {
+				url.searchParams.set(key, value.toString());
+			}
+		});
+	}
+
+	protected async makeRequest<T>(url: URL, method?: string, body?: any, retries = 3): Promise<T> {
 		method ??= body ? "POST" : "GET";
 		const init: RequestInit = {
 			method: method,
 			headers: {
 				"x-api-key": this.apiKey,
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				'Accept': 'application/json',
 			}
 		}
 
@@ -179,24 +260,29 @@ export class ChiefPayClient extends Emittery<Events> {
 		const res = await fetch(url, init);
 
 		if (res.status == 429) {
+			if (retries <= 0) throw new Error("Rate limit exceeded and max retries reached");
 			const retry = res.headers.get("retry-after-ms") ?? "3000";
 
 			await new Promise(x => setTimeout(x, +retry));
 
-			return this.makeRequest(url, method, body);
+			return this.makeRequest(url, method, body, retries - 1);
 		}
 
 		const bodyRes = await res.text();
-		let json: Response<T>;
+
+		let err: Error;
+
 		try {
-			json = JSON.parse(bodyRes);
+			let json = JSON.parse(bodyRes);
+			if (res.ok) return json;
+
+			if (isErrorResponse(json)) {
+				err = new ChiefPayError(json.errors, json.code);
+			} else err = new Error(`API Error ${res.status}: ${JSON.stringify(json)}`);
 		} catch (e) {
-			throw new Error(bodyRes);
+			err = new Error(`Failed to parse response: ${res.status} ${res.statusText}`);
 		}
 
-		if (json.status == "error") {
-			throw new ChiefPayError(json.message.message, json.message.code, json.message.fields);
-		}
-		return json.data;
+		throw err;
 	}
 }
